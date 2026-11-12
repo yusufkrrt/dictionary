@@ -1,6 +1,8 @@
-# 📖 LexiNote - Minimalist Kişisel İngilizce Sözlük & Kelime Defteri
+# 📖 LexiNote - İngilizce · Almanca · Rusça Kişisel Sözlük
 
-Öğrendiğiniz İngilizce kelimeleri, anlamlarını, telaffuzlarını ve örnek cümlelerini düzenli olarak kaydedip pratik yapabileceğiniz minimalist web uygulaması.
+Öğrendiğiniz kelimeleri, anlamlarını, telaffuzlarını ve örnek cümlelerini dile göre ayrı sözlüklerde kaydedip pratik yapabileceğiniz minimalist web uygulaması.
+
+**Canlı:** https://yusufkrrt.github.io/dictionary/
 
 Tamamen istemci tarafında çalışır. Giriş yapmadan veriler tarayıcıda (`localStorage`) tutulur; giriş yapıldığında Firebase (Firestore) ile cihazlar arasında senkronize edilir. **GitHub Pages** üzerinde yayınlanır.
 
@@ -28,9 +30,12 @@ Firebase ayarları repoda tutulmaz; workflow bunları **Settings → Secrets and
 
 ## ✨ Özellikler
 
+- **Dile Göre Ayrı Sözlükler:** İngilizce, Almanca ve Rusça. Açılışta sözlük seçilir; eklenen her kelime seçili sözlüğe kaydedilir ve yalnızca o sözlüğün kayıtları görünür. Dil üst menüden değiştirilir.
+- **Kişisel Hesap:** Giriş yapan her kullanıcının sözlükleri kendi Firestore alanında (`users/{uid}/words`) tutulur, cihazlar arasında senkronize olur. Giriş yapılmadan veriler tarayıcıda saklanır.
+- **Başlangıç Listeleri:** Her dilin en sık kullanılan 30 kelimesi (anlam, sesletim, örnek cümle ve çevirisiyle) hazır gelir.
 - **Kelime & Anlam Kaydı:** Kelime, fonetik telaffuz, kelime türü (isim, fiil, sıfat, deyim vb.), CEFR seviyesi (A1-C2).
-- **Zengin Örnek Cümleler:** Her kelime için birden fazla İngilizce örnek cümle ve Türkçe çeviri.
-- **Sesli Telaffuz (TTS):** Web Speech API ile İngilizce anadili telaffuzunu anında dinleyin.
+- **Zengin Örnek Cümleler:** Her kelime için birden fazla örnek cümle ve Türkçe çeviri.
+- **Sesli Telaffuz (TTS):** Web Speech API ile sözlüğün dilinde (en-US, de-DE, ru-RU) telaffuz.
 - **Minimalist Kartlar & Filtreler:** Seviye, kelime türü, öğrenme durumu (Yeni / Öğreniliyor / Tamamlandı) ve etiket filtreleri.
 - **Flashcard & Pratik Modu:** Kart çevirme, cümle tamamlama ve akılda kalıcılık testi.
 - **Yedekleme & Git Uyumluluğu:** 

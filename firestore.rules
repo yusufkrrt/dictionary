@@ -46,7 +46,8 @@ service cloud.firestore {
         data.meanings is list &&
         data.meanings.size() > 0 &&
         data.meanings.size() <= 30 &&
-        data.status in ['new', 'learning', 'mastered'];
+        data.status in ['new', 'learning', 'mastered'] &&
+        data.get('language', 'en') in ['en', 'ru', 'de'];
     }
 
     // User profiles collection

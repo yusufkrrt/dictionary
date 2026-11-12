@@ -25,7 +25,7 @@ export const WordCard: React.FC<WordCardProps> = ({
 
   const handleSpeak = (text: string) => {
     setIsPlayingAudio(true);
-    playPronunciation(text);
+    playPronunciation(text, word.language);
     setTimeout(() => setIsPlayingAudio(false), 1200);
   };
 

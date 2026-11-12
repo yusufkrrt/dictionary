@@ -20,7 +20,8 @@ import {
   deleteDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { WordItem } from '../types/dictionary.ts';
+import { normalizeLanguage } from '../data/languages.ts';
+import type { WordItem } from '../types/dictionary.ts';
 
 // 1. Firebase config comes from VITE_FIREBASE_* env vars (.env.local locally, repo secrets in CI)
 const env = import.meta.env;
@@ -169,7 +170,7 @@ async function ensureUserProfile(user: User) {
 export function subscribeToUserWords(
   userId: string,
   onData: (words: WordItem[]) => void,
-  onError: (err: any) => void
+  onError: (err: unknown) => void
 ) {
   const path = `users/${userId}/words`;
   return onSnapshot(
@@ -180,6 +181,7 @@ export function subscribeToUserWords(
         const data = docSnap.data();
         words.push({
           id: docSnap.id,
+          language: normalizeLanguage(data.language),
           word: data.word,
           phonetic: data.phonetic || undefined,
           partOfSpeech: data.partOfSpeech || 'noun',
@@ -202,36 +204,41 @@ export function subscribeToUserWords(
       onData(words);
     },
     (error) => {
-      handleFirestoreError(error, OperationType.GET, path);
+      // Notify the caller first: handleFirestoreError logs and then throws.
       onError(error);
+      handleFirestoreError(error, OperationType.LIST, path);
     }
   );
+}
+
+function toFirestoreWord(userId: string, word: WordItem) {
+  return {
+    id: word.id,
+    userId,
+    language: word.language,
+    word: word.word,
+    phonetic: word.phonetic || '',
+    partOfSpeech: word.partOfSpeech,
+    cefrLevel: word.cefrLevel || '',
+    meanings: word.meanings || [],
+    examples: word.examples || [],
+    synonyms: word.synonyms || [],
+    antonyms: word.antonyms || [],
+    tags: word.tags || [],
+    personalNote: word.personalNote || '',
+    status: word.status,
+    reviewCount: word.reviewCount || 0,
+    lastReviewedAt: word.lastReviewedAt || '',
+    favorite: !!word.favorite,
+    createdAt: word.createdAt || new Date().toISOString(),
+    updatedAt: word.updatedAt || new Date().toISOString(),
+  };
 }
 
 export async function saveUserWord(userId: string, word: WordItem): Promise<void> {
   const path = `users/${userId}/words/${word.id}`;
   try {
-    const payload = {
-      id: word.id,
-      userId,
-      word: word.word,
-      phonetic: word.phonetic || '',
-      partOfSpeech: word.partOfSpeech,
-      cefrLevel: word.cefrLevel || '',
-      meanings: word.meanings || [],
-      examples: word.examples || [],
-      synonyms: word.synonyms || [],
-      antonyms: word.antonyms || [],
-      tags: word.tags || [],
-      personalNote: word.personalNote || '',
-      status: word.status,
-      reviewCount: word.reviewCount || 0,
-      lastReviewedAt: word.lastReviewedAt || '',
-      favorite: !!word.favorite,
-      createdAt: word.createdAt || new Date().toISOString(),
-      updatedAt: word.updatedAt || new Date().toISOString(),
-    };
-    await setDoc(doc(db, 'users', userId, 'words', word.id), payload);
+    await setDoc(doc(db, 'users', userId, 'words', word.id), toFirestoreWord(userId, word));
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -246,40 +253,38 @@ export async function deleteUserWord(userId: string, wordId: string): Promise<vo
   }
 }
 
+/** Firestore limits a write batch to 500 operations, so large syncs are split into chunks. */
+const BATCH_LIMIT = 450;
+
 export async function batchSyncWordsToFirestore(userId: string, words: WordItem[]): Promise<void> {
   if (words.length === 0) return;
   const path = `users/${userId}/words`;
   try {
-    const batch = writeBatch(db);
-    for (const word of words) {
-      const docRef = doc(db, 'users', userId, 'words', word.id);
-      batch.set(
-        docRef,
-        {
-          id: word.id,
-          userId,
-          word: word.word,
-          phonetic: word.phonetic || '',
-          partOfSpeech: word.partOfSpeech,
-          cefrLevel: word.cefrLevel || '',
-          meanings: word.meanings || [],
-          examples: word.examples || [],
-          synonyms: word.synonyms || [],
-          antonyms: word.antonyms || [],
-          tags: word.tags || [],
-          personalNote: word.personalNote || '',
-          status: word.status,
-          reviewCount: word.reviewCount || 0,
-          lastReviewedAt: word.lastReviewedAt || '',
-          favorite: !!word.favorite,
-          createdAt: word.createdAt || new Date().toISOString(),
-          updatedAt: word.updatedAt || new Date().toISOString(),
-        },
-        { merge: true }
-      );
+    for (let i = 0; i < words.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(db);
+      for (const word of words.slice(i, i + BATCH_LIMIT)) {
+        batch.set(doc(db, 'users', userId, 'words', word.id), toFirestoreWord(userId, word), { merge: true });
+      }
+      await batch.commit();
     }
-    await batch.commit();
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
+  }
+}
+
+/** Deletes the given words (e.g. when a dictionary is reset or replaced by an import). */
+export async function batchDeleteWordsFromFirestore(userId: string, wordIds: string[]): Promise<void> {
+  if (wordIds.length === 0) return;
+  const path = `users/${userId}/words`;
+  try {
+    for (let i = 0; i < wordIds.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(db);
+      for (const wordId of wordIds.slice(i, i + BATCH_LIMIT)) {
+        batch.delete(doc(db, 'users', userId, 'words', wordId));
+      }
+      await batch.commit();
+    }
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, path);
   }
 }

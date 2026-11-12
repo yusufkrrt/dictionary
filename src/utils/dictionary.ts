@@ -1,4 +1,5 @@
-import type { DictionaryStats, PartOfSpeech, WordFilter, WordItem, WordStatus } from '../types/dictionary.ts';
+import { LANGUAGES } from '../data/languages.ts';
+import type { DictionaryLanguage, DictionaryStats, PartOfSpeech, WordFilter, WordItem, WordStatus } from '../types/dictionary.ts';
 
 /**
  * Filter, search, and sort words
@@ -101,11 +102,12 @@ export function calculateStats(words: WordItem[]): DictionaryStats {
 /**
  * Format dictionary into GitHub-friendly Markdown document
  */
-export function exportToMarkdown(words: WordItem[]): string {
+export function exportToMarkdown(words: WordItem[], language: DictionaryLanguage = 'en'): string {
+  const lang = LANGUAGES[language];
   const sorted = [...words].sort((a, b) => a.word.localeCompare(b.word));
   const stats = calculateStats(words);
 
-  let md = `# 📖 Kişisel İngilizce Sözlüğüm (Personal Lexicon)\n\n`;
+  let md = `# 📖 Kişisel ${lang.name} Sözlüğüm (${lang.nativeName})\n\n`;
   md += `> Toplam **${stats.totalWords}** kelime, **${stats.totalExamples}** örnek cümle.\n\n`;
   md += `## 📊 Özet İstatistikler\n`;
   md += `- **Öğrenildi / Mastered**: ${stats.masteredCount}\n`;
@@ -127,7 +129,7 @@ export function exportToMarkdown(words: WordItem[]): string {
     if (item.examples && item.examples.length > 0) {
       md += `- **Örnek Cümleler:**\n`;
       for (const ex of item.examples) {
-        md += `  - 🇬🇧 *"${ex.en}"*\n`;
+        md += `  - ${lang.flag} *"${ex.en}"*\n`;
         if (ex.tr) {
           md += `    🇹🇷 ${ex.tr}\n`;
         }
@@ -149,7 +151,7 @@ export function exportToMarkdown(words: WordItem[]): string {
     md += `\n---\n\n`;
   }
 
-  md += `\n*Bu sözlük [LexiNote](https://github.com) minimalist kelime defteri ile oluşturuldu.*\n`;
+  md += `\n*Bu sözlük [LexiNote](https://github.com/yusufkrrt/dictionary) minimalist kelime defteri ile oluşturuldu.*\n`;
   return md;
 }
 
@@ -183,9 +185,12 @@ export function exportToCsv(words: WordItem[]): string {
 }
 
 /**
- * Validate and import JSON array
+ * Validate and import a JSON array. Every imported word is assigned to the given dictionary language.
  */
-export function importFromJson(rawJson: string): { success: boolean; data?: WordItem[]; error?: string } {
+export function importFromJson(
+  rawJson: string,
+  language: DictionaryLanguage = 'en'
+): { success: boolean; data?: WordItem[]; error?: string } {
   try {
     const parsed = JSON.parse(rawJson);
     if (!Array.isArray(parsed)) {
@@ -199,6 +204,7 @@ export function importFromJson(rawJson: string): { success: boolean; data?: Word
       }
       validated.push({
         id: item.id || `word_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        language,
         word: item.word.trim(),
         phonetic: item.phonetic?.trim() || undefined,
         partOfSpeech: item.partOfSpeech || 'noun',
@@ -235,27 +241,26 @@ export function importFromJson(rawJson: string): { success: boolean; data?: Word
   }
 }
 
+const PART_OF_SPEECH_LABELS: Record<PartOfSpeech, string> = {
+  noun: 'İsim (noun)',
+  verb: 'Fiil (verb)',
+  adjective: 'Sıfat (adj)',
+  adverb: 'Zarf (adv)',
+  pronoun: 'Zamir (pron)',
+  preposition: 'Edat (prep)',
+  conjunction: 'Bağlaç (conj)',
+  article: 'Tanımlık (article)',
+  particle: 'Edatçık (particle)',
+  phrasal_verb: 'Deyimsel Fiil (phrasal verb)',
+  idiom: 'Deyim (idiom)',
+  expression: 'Kalıp İfade (expression)',
+};
+
+/** All parts of speech in display order, for select inputs and filters. */
+export const PART_OF_SPEECH_OPTIONS = Object.keys(PART_OF_SPEECH_LABELS) as PartOfSpeech[];
+
 export function getPartOfSpeechLabel(pos: PartOfSpeech): string {
-  switch (pos) {
-    case 'noun':
-      return 'İsim (noun)';
-    case 'verb':
-      return 'Fiil (verb)';
-    case 'adjective':
-      return 'Sıfat (adj)';
-    case 'adverb':
-      return 'Zarf (adv)';
-    case 'phrasal_verb':
-      return 'Deyimsel Fiil (phrasal verb)';
-    case 'idiom':
-      return 'Deyim (idiom)';
-    case 'expression':
-      return 'Kalıp İfade (expression)';
-    case 'conjunction':
-      return 'Bağlaç (conj)';
-    default:
-      return pos;
-  }
+  return PART_OF_SPEECH_LABELS[pos] ?? pos;
 }
 
 export function getStatusLabel(status: WordStatus): string {
@@ -270,25 +275,26 @@ export function getStatusLabel(status: WordStatus): string {
 }
 
 /**
- * Text-to-speech pronunciation utility using browser Web Speech API
+ * Text-to-speech pronunciation using the browser Web Speech API, in the dictionary's language.
  */
-export function playPronunciation(text: string, lang = 'en-US'): void {
+export function playPronunciation(text: string, language: DictionaryLanguage = 'en'): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return;
   }
 
-  // Cancel any ongoing speech
   window.speechSynthesis.cancel();
 
+  const speechLang = LANGUAGES[language].speechLang;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
-  utterance.rate = 0.9; // Slightly slower for clear language learners
+  utterance.lang = speechLang;
+  utterance.rate = 0.9; // Slightly slower for language learners
 
-  // Pick an English voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const englishVoice = voices.find((v) => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
-  if (englishVoice) {
-    utterance.voice = englishVoice;
+  // Prefer a high-quality voice for the language; fall back to any voice that matches it
+  const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.startsWith(language));
+  const preferredVoice =
+    voices.find((v) => /Natural|Google|Samantha|Anna|Milena/.test(v.name)) ?? voices[0];
+  if (preferredVoice) {
+    utterance.voice = preferredVoice;
   }
 
   window.speechSynthesis.speak(utterance);

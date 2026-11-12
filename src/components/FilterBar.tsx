@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, X, Star, ArrowUpDown } from 'lucide-react';
 import { CEFRLevel, PartOfSpeech, SortOption, WordFilter, WordStatus } from '../types/dictionary.ts';
+import { getPartOfSpeechLabel, PART_OF_SPEECH_OPTIONS } from '../utils/dictionary.ts';
 
 interface FilterBarProps {
   filter: WordFilter;
@@ -24,13 +25,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   const posOptions: Array<{ label: string; value: PartOfSpeech | 'all' }> = [
     { label: 'Tüm Türler', value: 'all' },
-    { label: 'İsim (noun)', value: 'noun' },
-    { label: 'Fiil (verb)', value: 'verb' },
-    { label: 'Sıfat (adj)', value: 'adjective' },
-    { label: 'Zarf (adv)', value: 'adverb' },
-    { label: 'Phrasal Verb', value: 'phrasal_verb' },
-    { label: 'Deyim (idiom)', value: 'idiom' },
-    { label: 'Kalıp İfade', value: 'expression' },
+    ...PART_OF_SPEECH_OPTIONS.map((pos) => ({ label: getPartOfSpeechLabel(pos), value: pos })),
   ];
 
   const cefrOptions: Array<{ label: string; value: CEFRLevel | 'all' }> = [

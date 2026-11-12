@@ -13,7 +13,8 @@ import {
   ShieldCheck,
   Terminal,
 } from 'lucide-react';
-import { WordItem } from '../types/dictionary.ts';
+import { DictionaryLanguage, WordItem } from '../types/dictionary.ts';
+import { LANGUAGES } from '../data/languages.ts';
 import {
   exportToCsv,
   exportToJson,
@@ -27,6 +28,7 @@ interface GitHubModalProps {
   words: WordItem[];
   onImportWords: (newWords: WordItem[]) => void;
   onResetToDefaults: () => void;
+  language: DictionaryLanguage;
 }
 
 export const GitHubModal: React.FC<GitHubModalProps> = ({
@@ -35,7 +37,9 @@ export const GitHubModal: React.FC<GitHubModalProps> = ({
   words,
   onImportWords,
   onResetToDefaults,
+  language,
 }) => {
+  const lang = LANGUAGES[language];
   const [activeTab, setActiveTab] = useState<'deploy' | 'export' | 'import' | 'reset'>('deploy');
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [pasteJsonInput, setPasteJsonInput] = useState('');
@@ -62,18 +66,18 @@ export const GitHubModal: React.FC<GitHubModalProps> = ({
   };
 
   const handleDownloadMarkdown = () => {
-    const md = exportToMarkdown(words);
-    downloadFile(md, 'VOCABULARY.md', 'text/markdown;charset=utf-8;');
+    const md = exportToMarkdown(words, language);
+    downloadFile(md, `VOCABULARY_${language.toUpperCase()}.md`, 'text/markdown;charset=utf-8;');
   };
 
   const handleDownloadJson = () => {
     const jsonStr = exportToJson(words);
-    downloadFile(jsonStr, `lexinote-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+    downloadFile(jsonStr, `lexinote-${language}-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
   };
 
   const handleDownloadCsv = () => {
     const csvStr = exportToCsv(words);
-    downloadFile(csvStr, 'vocabulary.csv', 'text/csv;charset=utf-8;');
+    downloadFile(csvStr, `vocabulary_${language}.csv`, 'text/csv;charset=utf-8;');
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,12 +93,12 @@ export const GitHubModal: React.FC<GitHubModalProps> = ({
   };
 
   const processImport = (jsonStr: string) => {
-    const res = importFromJson(jsonStr);
+    const res = importFromJson(jsonStr, language);
     if (res.success && res.data) {
       onImportWords(res.data);
       setImportStatus({
         success: true,
-        message: `Başarılı! ${res.data.length} adet kelime içe aktarıldı ve güncellendi.`,
+        message: `Başarılı! ${res.data.length} kelime ${lang.name} sözlüğüne aktarıldı.`,
       });
       setPasteJsonInput('');
     } else {
@@ -108,7 +112,7 @@ export const GitHubModal: React.FC<GitHubModalProps> = ({
   const gitCommands = `# 1. Proje dizininde git başlatın:
 git init
 git add .
-git commit -m "feat: kişisel ingilizce sözlüğüm ilk sürüm"
+git commit -m "feat: kişisel sözlüğüm ilk sürüm"
 git branch -M main
 
 # 2. GitHub reponuzu bağlayıp push edin:
@@ -219,7 +223,7 @@ on:
                     GitHub'da Yeni Bir Repository Açın
                   </div>
                   <p className="text-stone-600 dark:text-stone-400 pl-5.5">
-                    github.com adresine gidip yeni bir repository oluşturun (örnek: <code>ingilizce-sozlugum</code>).
+                    github.com adresine gidip yeni bir repository oluşturun (örnek: <code>dictionary</code>).
                   </p>
                 </div>
 
@@ -342,7 +346,7 @@ on:
           {activeTab === 'import' && (
             <div className="space-y-4">
               <p className="text-stone-600 dark:text-stone-400">
-                Daha önce yedeklediğiniz bir <code className="font-mono">.json</code> dosyasını yükleyin veya JSON metnini buraya yapıştırarak sözlüğünüzü geri yükleyin:
+                Daha önce yedeklediğiniz bir <code className="font-mono">.json</code> dosyasını yükleyin veya JSON metnini yapıştırın. Kelimeler <strong>{lang.name}</strong> sözlüğüne eklenir; aynı kimlikteki kayıtlar güncellenir, diğerleri silinmez.
               </p>
 
               {importStatus && (
@@ -402,7 +406,7 @@ on:
                 Örnek Kelimeleri Sıfırla (Fabrika Ayarları)
               </div>
               <p className="text-amber-800 dark:text-amber-300 text-xs">
-                Sözlüğü başlangıçtaki 8 adet zengin örnek kelimeye geri döndürür. Kendi eklediğiniz kelimeleri kaybetmemek için önce "Dışa Aktar" sekmesinden yedek almanızı öneririz.
+                {lang.name} sözlüğünü dilin en sık kullanılan 30 kelimesinden oluşan başlangıç listesine döndürür. Bu sözlüğe eklediğiniz kelimeler silinir; diğer dillerdeki sözlükleriniz etkilenmez. Önce "Dışa Aktar" sekmesinden yedek almanızı öneririz.
               </p>
               <button
                 type="button"
@@ -421,7 +425,7 @@ on:
         {/* Footer */}
         <div className="px-6 py-3.5 bg-stone-50 dark:bg-stone-800/60 border-t border-stone-200 dark:border-stone-800 flex items-center justify-between">
           <span className="text-[11px] text-stone-500 dark:text-stone-400">
-            Toplam {words.length} kelime hafızada kayıtlı
+            {lang.name} sözlüğünde {words.length} kelime kayıtlı
           </span>
           <button
             type="button"

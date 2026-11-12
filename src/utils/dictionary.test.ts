@@ -12,6 +12,7 @@ import type { WordItem } from '../types/dictionary.ts';
 const SAMPLE_WORDS: WordItem[] = [
   {
     id: '1',
+    language: 'en',
     word: 'Resilience',
     phonetic: '/rɪˈzɪl.jəns/',
     partOfSpeech: 'noun',
@@ -29,6 +30,7 @@ const SAMPLE_WORDS: WordItem[] = [
   },
   {
     id: '2',
+    language: 'en',
     word: 'Catch up with',
     phonetic: '/kætʃ ʌp wɪð/',
     partOfSpeech: 'phrasal_verb',
@@ -47,6 +49,7 @@ const SAMPLE_WORDS: WordItem[] = [
   },
   {
     id: '3',
+    language: 'en',
     word: 'Ubiquitous',
     partOfSpeech: 'adjective',
     cefrLevel: 'C1',
@@ -135,4 +138,19 @@ test('importFromJson validates and sanitizes incoming data array', () => {
   // Invalid JSON
   const invalid = importFromJson('invalid string');
   assert.equal(invalid.success, false);
+});
+
+test('exportToMarkdown uses the dictionary language in the title and example flags', () => {
+  const md = exportToMarkdown(SAMPLE_WORDS, 'de');
+  assert.ok(md.includes('# 📖 Kişisel Almanca Sözlüğüm (Deutsch)'));
+  assert.ok(md.includes('🇩🇪 *"Her resilience was key."*'));
+});
+
+test('importFromJson assigns every imported word to the target dictionary', () => {
+  const exported = exportToJson(SAMPLE_WORDS);
+  const imported = importFromJson(exported, 'ru');
+
+  assert.equal(imported.success, true);
+  assert.ok(imported.data);
+  assert.ok(imported.data.every((w) => w.language === 'ru'));
 });

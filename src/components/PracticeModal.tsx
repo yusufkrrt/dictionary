@@ -219,7 +219,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
                   </h3>
                   <button
                     type="button"
-                    onClick={() => playPronunciation(currentWord.word)}
+                    onClick={() => playPronunciation(currentWord.word, currentWord.language)}
                     aria-label={`"${currentWord.word}" telaffuzunu dinle`}
                     className="p-2 text-stone-400 hover:text-amber-600 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full transition-colors cursor-pointer"
                     title="Telaffuzu Dinle"
@@ -275,7 +275,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
                             </p>
                             <button
                               type="button"
-                              onClick={() => playPronunciation(ex.en)}
+                              onClick={() => playPronunciation(ex.en, currentWord.language)}
                               className="text-stone-400 hover:text-amber-600 p-1 cursor-pointer shrink-0"
                               title="Cümleyi Dinle"
                             >

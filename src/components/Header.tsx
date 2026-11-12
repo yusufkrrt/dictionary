@@ -1,6 +1,8 @@
 import React from 'react';
 import { BookOpen, Plus, Sparkles, Github, Moon, Sun, User, LogOut, Cloud } from 'lucide-react';
 import { User as FirebaseUser } from 'firebase/auth';
+import type { DictionaryLanguage } from '../types/dictionary.ts';
+import { LANGUAGES, LANGUAGE_ORDER } from '../data/languages.ts';
 
 interface HeaderProps {
   onOpenAddModal: () => void;
@@ -12,6 +14,9 @@ interface HeaderProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   wordsCount: number;
+  /** Null while the user has not chosen a dictionary yet. */
+  language: DictionaryLanguage | null;
+  onChangeLanguage: (language: DictionaryLanguage) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,6 +29,8 @@ export const Header: React.FC<HeaderProps> = ({
   isDarkMode,
   onToggleDarkMode,
   wordsCount,
+  language,
+  onChangeLanguage,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-stone-50/90 dark:bg-stone-900/90 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 transition-colors">
@@ -39,11 +46,38 @@ export const Header: React.FC<HeaderProps> = ({
                 LexiNote
               </span>
               <span className="hidden sm:inline-block text-xs font-medium text-stone-600 dark:text-stone-300">
-                Kişisel Sözlük
+                {language ? `${LANGUAGES[language].name} Sözlük` : 'Kişisel Sözlük'}
               </span>
             </div>
           </div>
         </div>
+
+        {/* Dictionary (language) switcher */}
+        {language && (
+          <div
+            role="radiogroup"
+            aria-label="Sözlük dili"
+            className="flex items-center p-0.5 bg-stone-200/60 dark:bg-stone-800 rounded-lg shrink-0"
+          >
+            {LANGUAGE_ORDER.map((code) => (
+              <button
+                key={code}
+                type="button"
+                role="radio"
+                aria-checked={language === code}
+                onClick={() => onChangeLanguage(code)}
+                title={`${LANGUAGES[code].name} sözlüğe geç`}
+                className={`px-2 py-1 text-[11px] font-mono font-semibold rounded-md transition-colors cursor-pointer ${
+                  language === code
+                    ? 'bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-100 shadow-xs'
+                    : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
+                }`}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-2.5">
@@ -58,34 +92,39 @@ export const Header: React.FC<HeaderProps> = ({
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {/* GitHub & Backup */}
-          <button
-            type="button"
-            onClick={onOpenGitHubModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-200/70 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
-            title="GitHub Pages ve Dışa Aktar"
-          >
-            <Github className="w-4 h-4 text-stone-600 dark:text-stone-300" />
-            <span className="hidden md:inline">GitHub & Yedek</span>
-          </button>
+          {language && (
+            <>
+            {/* GitHub & Backup */}
+            <button
+              type="button"
+              onClick={onOpenGitHubModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-200/70 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+              title="GitHub Pages ve Dışa Aktar"
+            >
+              <Github className="w-4 h-4 text-stone-600 dark:text-stone-300" />
+              <span className="hidden md:inline">GitHub & Yedek</span>
+            </button>
 
-          {/* Practice */}
-          <button
-            type="button"
-            onClick={onOpenPracticeModal}
-            disabled={wordsCount === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-950/60 hover:bg-amber-200/80 dark:hover:bg-amber-900/60 border border-amber-300/60 dark:border-amber-800/80 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-            title="Kelime Pratiği & Flashcards"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-            <span>Pratik Yap</span>
-          </button>
+            {/* Practice */}
+            <button
+              type="button"
+              onClick={onOpenPracticeModal}
+              disabled={wordsCount === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-900 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-950/60 hover:bg-amber-200/80 dark:hover:bg-amber-900/60 border border-amber-300/60 dark:border-amber-800/80 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              title="Kelime Pratiği & Flashcards"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+              <span>Pratik Yap</span>
+            </button>
+            </>
+          )}
 
           {/* Add Word */}
           <button
             type="button"
             onClick={onOpenAddModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-stone-900 dark:bg-stone-100 dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-white rounded-lg shadow-sm transition-colors cursor-pointer whitespace-nowrap"
+            disabled={!language}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-stone-900 dark:bg-stone-100 dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-white rounded-lg shadow-sm transition-colors cursor-pointer whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Kelime Ekle</span>

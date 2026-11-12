@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Volume2, Sparkles } from 'lucide-react';
-import { CEFRLevel, PartOfSpeech, SentenceExample, WordItem, WordStatus } from '../types/dictionary.ts';
-import { playPronunciation } from '../utils/dictionary.ts';
+import { CEFRLevel, DictionaryLanguage, PartOfSpeech, SentenceExample, WordItem, WordStatus } from '../types/dictionary.ts';
+import { LANGUAGES } from '../data/languages.ts';
+import { getPartOfSpeechLabel, PART_OF_SPEECH_OPTIONS, playPronunciation } from '../utils/dictionary.ts';
 
 interface WordModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (wordData: Omit<WordItem, 'id' | 'createdAt' | 'updatedAt' | 'reviewCount'> & { id?: string }) => void;
   initialWord?: WordItem | null;
+  language: DictionaryLanguage;
 }
 
 export const WordModal: React.FC<WordModalProps> = ({
@@ -15,7 +17,9 @@ export const WordModal: React.FC<WordModalProps> = ({
   onClose,
   onSave,
   initialWord,
+  language,
 }) => {
+  const lang = LANGUAGES[language];
   const [word, setWord] = useState('');
   const [phonetic, setPhonetic] = useState('');
   const [partOfSpeech, setPartOfSpeech] = useState<PartOfSpeech>('noun');
@@ -65,7 +69,7 @@ export const WordModal: React.FC<WordModalProps> = ({
       setExamples([{ id: `ex_${Date.now()}`, en: '', tr: '', context: '' }]);
       setSynonymsInput('');
       setAntonymsInput('');
-      setTagsInput('Daily');
+      setTagsInput('Günlük');
       setPersonalNote('');
       setStatus('learning');
       setFavorite(false);
@@ -118,7 +122,7 @@ export const WordModal: React.FC<WordModalProps> = ({
     e.preventDefault();
 
     if (!word.trim()) {
-      setError('Lütfen İngilizce kelimeyi giriniz.');
+      setError(`Lütfen ${lang.name} kelimeyi giriniz.`);
       return;
     }
 
@@ -154,6 +158,7 @@ export const WordModal: React.FC<WordModalProps> = ({
 
     onSave({
       id: initialWord?.id,
+      language,
       word: word.trim(),
       phonetic: phonetic.trim() || undefined,
       partOfSpeech,
@@ -177,7 +182,7 @@ export const WordModal: React.FC<WordModalProps> = ({
         {/* Header */}
         <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
           <h2 className="font-editorial text-xl font-bold">
-            {initialWord ? 'Kelimeyi Düzenle' : 'Yeni Kelime & Cümle Ekle'}
+            {initialWord ? 'Kelimeyi Düzenle' : `Yeni Kelime · ${lang.name} Sözlük`}
           </h2>
           <button
             type="button"
@@ -201,7 +206,7 @@ export const WordModal: React.FC<WordModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                İngilizce Kelime / İfade *
+                {lang.name} Kelime / İfade *
               </label>
               <div className="relative">
                 <input
@@ -209,13 +214,13 @@ export const WordModal: React.FC<WordModalProps> = ({
                   required
                   value={word}
                   onChange={(e) => setWord(e.target.value)}
-                  placeholder="ör. Resilience, Serendipity"
+                  placeholder={lang.wordPlaceholder}
                   className="w-full px-3.5 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-stone-400 focus:outline-none text-stone-900 dark:text-stone-100 font-medium"
                 />
                 {word.trim() && (
                   <button
                     type="button"
-                    onClick={() => playPronunciation(word)}
+                    onClick={() => playPronunciation(word, language)}
                     title="Telaffuzu dene"
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-amber-600 cursor-pointer"
                   >
@@ -233,7 +238,7 @@ export const WordModal: React.FC<WordModalProps> = ({
                 type="text"
                 value={phonetic}
                 onChange={(e) => setPhonetic(e.target.value)}
-                placeholder="ör. /rɪˈzɪl.jəns/"
+                placeholder={lang.phoneticPlaceholder}
                 className="w-full px-3.5 py-2 font-mono text-xs bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-stone-400 focus:outline-none text-stone-900 dark:text-stone-100"
               />
             </div>
@@ -250,14 +255,11 @@ export const WordModal: React.FC<WordModalProps> = ({
                 onChange={(e) => setPartOfSpeech(e.target.value as PartOfSpeech)}
                 className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl text-xs focus:ring-2 focus:ring-stone-400 focus:outline-none text-stone-900 dark:text-stone-100 cursor-pointer"
               >
-                <option value="noun">İsim (noun)</option>
-                <option value="verb">Fiil (verb)</option>
-                <option value="adjective">Sıfat (adj)</option>
-                <option value="adverb">Zarf (adv)</option>
-                <option value="phrasal_verb">Phrasal Verb</option>
-                <option value="idiom">Deyim (idiom)</option>
-                <option value="expression">Kalıp İfade</option>
-                <option value="conjunction">Bağlaç</option>
+                {PART_OF_SPEECH_OPTIONS.map((pos) => (
+                  <option key={pos} value={pos}>
+                    {getPartOfSpeechLabel(pos)}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -317,7 +319,7 @@ export const WordModal: React.FC<WordModalProps> = ({
                     type="text"
                     value={meaning}
                     onChange={(e) => handleUpdateMeaning(index, e.target.value)}
-                    placeholder={`Anlam ${index + 1} (ör. zorluklara karşı dayanıklılık)`}
+                    placeholder={`Anlam ${index + 1} (ör. sabır, dayanıklılık)`}
                     className="flex-1 px-3 py-2 text-xs bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-stone-400 focus:outline-none text-stone-900 dark:text-stone-100"
                   />
                   {meanings.length > 1 && (
@@ -340,7 +342,7 @@ export const WordModal: React.FC<WordModalProps> = ({
             <div className="flex items-center justify-between mb-2">
               <div>
                 <span className="text-xs font-semibold text-stone-700 dark:text-stone-300 block">
-                  Örnek Cümleler (İngilizce & Türkçe)
+                  Örnek Cümleler ({lang.name} & Türkçe)
                 </span>
                 <span className="text-[11px] text-stone-500 dark:text-stone-400">
                   Kelimeleri cümle içinde görmek kalıcılığı 3 kat artırır
@@ -382,7 +384,7 @@ export const WordModal: React.FC<WordModalProps> = ({
                       type="text"
                       value={ex.en}
                       onChange={(e) => handleUpdateExample(index, 'en', e.target.value)}
-                      placeholder="🇬🇧 İngilizce örnek cümle (ör. Her resilience inspired the team.)"
+                      placeholder={lang.examplePlaceholder}
                       className="w-full px-3 py-1.5 text-xs bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400 text-stone-900 dark:text-stone-100"
                     />
                   </div>
@@ -418,7 +420,7 @@ export const WordModal: React.FC<WordModalProps> = ({
                 type="text"
                 value={synonymsInput}
                 onChange={(e) => setSynonymsInput(e.target.value)}
-                placeholder="endurance, tenacity"
+                placeholder="Virgülle ayırın"
                 className="w-full px-3 py-2 text-xs bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-stone-400 focus:outline-none text-stone-900 dark:text-stone-100"
               />
             </div>
@@ -431,7 +433,7 @@ export const WordModal: React.FC<WordModalProps> = ({
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="Daily, Work, Academic, Speaking"
+                placeholder="Günlük, İş, Seyahat, Konuşma"
                 className="w-full px-3 py-2 text-xs bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-stone-400 focus:outline-none text-stone-900 dark:text-stone-100"
               />
             </div>

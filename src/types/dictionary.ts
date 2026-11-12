@@ -1,3 +1,6 @@
+/** Target languages that have their own separate dictionary. */
+export type DictionaryLanguage = 'en' | 'ru' | 'de';
+
 export type PartOfSpeech =
   | 'noun'
   | 'verb'
@@ -6,7 +9,11 @@ export type PartOfSpeech =
   | 'phrasal_verb'
   | 'idiom'
   | 'expression'
-  | 'conjunction';
+  | 'conjunction'
+  | 'pronoun'
+  | 'preposition'
+  | 'article'
+  | 'particle';
 
 export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
@@ -14,6 +21,7 @@ export type WordStatus = 'new' | 'learning' | 'mastered';
 
 export interface SentenceExample {
   id: string;
+  /** Sentence in the dictionary's target language (field name kept for stored-data compatibility). */
   en: string;
   tr?: string;
   context?: string;
@@ -21,6 +29,8 @@ export interface SentenceExample {
 
 export interface WordItem {
   id: string;
+  /** Which dictionary this word belongs to. Legacy records without it are treated as English. */
+  language: DictionaryLanguage;
   word: string;
   phonetic?: string;
   partOfSpeech: PartOfSpeech;
