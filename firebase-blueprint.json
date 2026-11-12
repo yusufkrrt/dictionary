@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User ID matching auth UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "User avatar photo URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "email"]
+    },
+    "Word": {
+      "title": "Word",
+      "description": "A vocabulary word entry with sentence examples and translation",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique word identifier"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user UID"
+        },
+        "word": {
+          "type": "string",
+          "description": "English word or phrase",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "phonetic": {
+          "type": "string",
+          "description": "IPA phonetic pronunciation guide",
+          "maxLength": 100
+        },
+        "partOfSpeech": {
+          "type": "string",
+          "description": "Part of speech category"
+        },
+        "cefrLevel": {
+          "type": "string",
+          "description": "CEFR proficiency level (A1-C2)"
+        },
+        "meanings": {
+          "type": "array",
+          "description": "List of Turkish translations or definitions"
+        },
+        "examples": {
+          "type": "array",
+          "description": "List of sentence examples with English, Turkish and context"
+        },
+        "synonyms": {
+          "type": "array",
+          "description": "Synonym words list"
+        },
+        "antonyms": {
+          "type": "array",
+          "description": "Antonym words list"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Topic tags"
+        },
+        "personalNote": {
+          "type": "string",
+          "description": "Personal mnemonic or reminder note",
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "description": "Learning status: new, learning, or mastered"
+        },
+        "reviewCount": {
+          "type": "number",
+          "description": "Total review times in practice mode"
+        },
+        "lastReviewedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last practice"
+        },
+        "favorite": {
+          "type": "boolean",
+          "description": "Whether the word is favorited"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["id", "userId", "word", "meanings", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "User profile information"
+    },
+    "/users/{userId}/words/{wordId}": {
+      "schema": {
+        "$ref": "#/entities/Word"
+      },
+      "description": "User private vocabulary words collection"
+    }
+  }
+}

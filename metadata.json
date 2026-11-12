@@ -1,0 +1,6 @@
+{
+  "name": "LexiNote - Kişisel İngilizce Sözlük",
+  "description": "Öğrenilen İngilizce kelimeleri ve örnek cümleleri kaydedip pratik yapabileceğiniz, GitHub Pages uyumlu minimalist sözlük defteri.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

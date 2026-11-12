@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+
+# Local secrets (Firebase config etc.)
+.env*
+!.env.example
+firebase-applet-config.json
+
+# AI Studio workspace artifacts
+.aistudio/
