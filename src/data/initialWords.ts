@@ -1,9 +1,8 @@
 import type { DictionaryLanguage, PartOfSpeech, WordItem } from '../types/dictionary.ts';
 
 /**
- * Starter content: the 30 most frequent words (lemmas) of each language, in frequency order.
- * Sources: Oxford English Corpus (en), Routledge Frequency Dictionary of German (de),
- * Sharoff / Lyashevskaya lemma frequency lists (ru).
+ * Starter content: 30 core vocabulary words per language (10 nouns, 12 verbs, 8 adjectives),
+ * picked from the most frequent content words of each language. Function words are left out.
  */
 
 interface SampleEntry {
@@ -15,27 +14,27 @@ interface SampleEntry {
   note?: string;
 }
 
-const SAMPLE_TAGS = ['En Sık 30', 'Temel'];
+const SAMPLE_TAGS = ['Temel 30'];
 const SAMPLE_BASE_TIME = Date.UTC(2026, 10, 1);
 
 function buildSamples(language: DictionaryLanguage, entries: SampleEntry[]): WordItem[] {
   return entries.map((entry, index) => {
-    const rank = index + 1;
-    // Older timestamps for higher-ranked words, so "newest first" lists end with the most frequent word.
-    const timestamp = new Date(SAMPLE_BASE_TIME + (entries.length - rank) * 60_000).toISOString();
+    const order = index + 1;
+    // Older timestamps for later entries, so the default "newest first" sort keeps the list order.
+    const timestamp = new Date(SAMPLE_BASE_TIME + (entries.length - order) * 60_000).toISOString();
     return {
-      id: `sample_${language}_${rank}`,
+      id: `sample_${language}_${order}`,
       language,
       word: entry.word,
       phonetic: entry.phonetic,
       partOfSpeech: entry.pos,
       cefrLevel: 'A1',
       meanings: entry.meanings,
-      examples: [{ id: `ex_${language}_${rank}`, en: entry.example[0], tr: entry.example[1] }],
+      examples: [{ id: `ex_${language}_${order}`, en: entry.example[0], tr: entry.example[1] }],
       synonyms: [],
       antonyms: [],
       tags: SAMPLE_TAGS,
-      personalNote: entry.note ? `#${rank} · ${entry.note}` : `Sıklık sırası: #${rank}`,
+      personalNote: entry.note,
       status: 'new',
       reviewCount: 0,
       createdAt: timestamp,
@@ -46,102 +45,111 @@ function buildSamples(language: DictionaryLanguage, entries: SampleEntry[]): Wor
 }
 
 const EN: SampleEntry[] = [
-  { word: 'the', phonetic: '/ðə/', pos: 'article', meanings: ['Belirli tanımlık (çoğu zaman çevrilmez)'], example: ['The book is on the table.', 'Kitap masanın üstünde.'], note: 'Sesli harften önce /ði/ okunur: the apple.' },
-  { word: 'be', phonetic: '/biː/', pos: 'verb', meanings: ['Olmak', '-dir, -dır'], example: ['I am a student.', 'Ben bir öğrenciyim.'], note: 'am / is / are – was / were – been' },
-  { word: 'to', phonetic: '/tuː/', pos: 'preposition', meanings: ['-e, -a (yönelme)', 'mastar eki (to go = gitmek)'], example: ['I want to go to the park.', 'Parka gitmek istiyorum.'] },
-  { word: 'of', phonetic: '/ɒv/', pos: 'preposition', meanings: ['-in, -ın (ait olma)', '-den (miktar)'], example: ['She is the mother of two children.', 'O, iki çocuk annesi.'] },
-  { word: 'and', phonetic: '/ænd/', pos: 'conjunction', meanings: ['Ve'], example: ['Tea and coffee, please.', 'Çay ve kahve lütfen.'] },
-  { word: 'a', phonetic: '/ə/', pos: 'article', meanings: ['Bir (belirsiz tanımlık)'], example: ['I have a car.', 'Bir arabam var.'], note: 'Sesli harften önce "an" olur: an apple.' },
-  { word: 'in', phonetic: '/ɪn/', pos: 'preposition', meanings: ['İçinde, -de, -da'], example: ['The keys are in my bag.', 'Anahtarlar çantamda.'] },
-  { word: 'that', phonetic: '/ðæt/', pos: 'pronoun', meanings: ['Şu, o', 'ki, -dığı (bağlaç olarak)'], example: ['I know that you are right.', 'Haklı olduğunu biliyorum.'] },
-  { word: 'have', phonetic: '/hæv/', pos: 'verb', meanings: ['Sahip olmak', 'yardımcı fiil (have done)'], example: ['We have a big family.', 'Kalabalık bir ailemiz var.'], note: 'he / she / it has – had – had' },
-  { word: 'I', phonetic: '/aɪ/', pos: 'pronoun', meanings: ['Ben'], example: ['I live in Istanbul.', "İstanbul'da yaşıyorum."], note: 'Her zaman büyük harfle yazılır.' },
-  { word: 'it', phonetic: '/ɪt/', pos: 'pronoun', meanings: ['O (cansız varlık, hayvan)', 'hava/zaman cümlelerinde özne'], example: ['It is very cold today.', 'Bugün hava çok soğuk.'] },
-  { word: 'for', phonetic: '/fɔː/', pos: 'preposition', meanings: ['İçin', '(süre) -dir'], example: ['This gift is for you.', 'Bu hediye senin için.'] },
-  { word: 'not', phonetic: '/nɒt/', pos: 'adverb', meanings: ['Değil', 'olumsuzluk eki'], example: ['I am not tired.', 'Yorgun değilim.'] },
-  { word: 'on', phonetic: '/ɒn/', pos: 'preposition', meanings: ['Üzerinde', '(gün) -de'], example: ['See you on Monday.', 'Pazartesi görüşürüz.'] },
-  { word: 'with', phonetic: '/wɪð/', pos: 'preposition', meanings: ['İle, birlikte'], example: ['I live with my parents.', 'Ailemle yaşıyorum.'] },
-  { word: 'he', phonetic: '/hiː/', pos: 'pronoun', meanings: ['O (erkek)'], example: ['He works in a hospital.', 'O bir hastanede çalışıyor.'] },
-  { word: 'as', phonetic: '/æz/', pos: 'conjunction', meanings: ['Olarak', '-dığı gibi', '-ken'], example: ['She works as a teacher.', 'Öğretmen olarak çalışıyor.'] },
-  { word: 'you', phonetic: '/juː/', pos: 'pronoun', meanings: ['Sen, siz'], example: ['Do you speak English?', 'İngilizce konuşuyor musun?'] },
-  { word: 'do', phonetic: '/duː/', pos: 'verb', meanings: ['Yapmak', 'soru ve olumsuzluk yardımcı fiili'], example: ['What do you do?', 'Ne iş yapıyorsun?'], note: 'does – did – done' },
-  { word: 'at', phonetic: '/æt/', pos: 'preposition', meanings: ['-de (nokta, adres)', '(saat) -de'], example: ["The meeting is at five o'clock.", 'Toplantı saat beşte.'] },
-  { word: 'this', phonetic: '/ðɪs/', pos: 'pronoun', meanings: ['Bu'], example: ['This is my brother.', 'Bu benim kardeşim.'], note: 'Çoğulu: these' },
-  { word: 'but', phonetic: '/bʌt/', pos: 'conjunction', meanings: ['Ama, fakat'], example: ['It is small but comfortable.', 'Küçük ama rahat.'] },
-  { word: 'his', phonetic: '/hɪz/', pos: 'pronoun', meanings: ['Onun (erkek)'], example: ['His name is Tom.', 'Onun adı Tom.'] },
-  { word: 'by', phonetic: '/baɪ/', pos: 'preposition', meanings: ['Tarafından', 'ile (ulaşım)', '-e kadar'], example: ['I go to work by bus.', 'İşe otobüsle giderim.'] },
-  { word: 'from', phonetic: '/frɒm/', pos: 'preposition', meanings: ['-den, -dan'], example: ['Where are you from?', 'Nerelisin?'] },
-  { word: 'they', phonetic: '/ðeɪ/', pos: 'pronoun', meanings: ['Onlar'], example: ['They are my friends.', 'Onlar benim arkadaşlarım.'] },
-  { word: 'we', phonetic: '/wiː/', pos: 'pronoun', meanings: ['Biz'], example: ['We are late again.', 'Yine geç kaldık.'] },
+  // Nouns
+  { word: 'time', phonetic: '/taɪm/', pos: 'noun', meanings: ['Zaman, vakit', 'kez, sefer'], example: ["I don't have time today.", 'Bugün vaktim yok.'], note: 'What time is it? = Saat kaç?' },
+  { word: 'people', phonetic: '/ˈpiːpl/', pos: 'noun', meanings: ['İnsanlar', 'halk'], example: ['Many people live in this city.', 'Bu şehirde çok insan yaşıyor.'], note: '"person" kelimesinin çoğulu olarak kullanılır.' },
+  { word: 'year', phonetic: '/jɪə/', pos: 'noun', meanings: ['Yıl, sene'], example: ['I moved here last year.', 'Geçen yıl buraya taşındım.'] },
+  { word: 'day', phonetic: '/deɪ/', pos: 'noun', meanings: ['Gün'], example: ['Have a nice day!', 'İyi günler!'] },
+  { word: 'life', phonetic: '/laɪf/', pos: 'noun', meanings: ['Hayat, yaşam'], example: ['Life is beautiful.', 'Hayat güzel.'], note: 'Çoğulu: lives' },
+  { word: 'man', phonetic: '/mæn/', pos: 'noun', meanings: ['Adam, erkek'], example: ['That man is my teacher.', 'O adam benim öğretmenim.'], note: 'Çoğulu: men' },
+  { word: 'woman', phonetic: '/ˈwʊmən/', pos: 'noun', meanings: ['Kadın'], example: ['The woman is reading a book.', 'Kadın kitap okuyor.'], note: 'Çoğulu: women /ˈwɪmɪn/' },
+  { word: 'child', phonetic: '/tʃaɪld/', pos: 'noun', meanings: ['Çocuk'], example: ['They have one child.', 'Bir çocukları var.'], note: 'Çoğulu: children' },
+  { word: 'world', phonetic: '/wɜːld/', pos: 'noun', meanings: ['Dünya'], example: ['She wants to travel around the world.', 'Dünyayı gezmek istiyor.'] },
+  { word: 'house', phonetic: '/haʊs/', pos: 'noun', meanings: ['Ev'], example: ['Their house has a big garden.', 'Evlerinin büyük bir bahçesi var.'], note: '"home" ise yuva, insanın kendi evi anlamında.' },
+  // Verbs
   { word: 'say', phonetic: '/seɪ/', pos: 'verb', meanings: ['Söylemek, demek'], example: ['What did you say?', 'Ne dedin?'], note: 'say – said – said' },
-  { word: 'her', phonetic: '/hɜː/', pos: 'pronoun', meanings: ['Onun (kadın)', 'onu, ona (kadın)'], example: ['I called her yesterday.', 'Dün onu aradım.'] },
-  { word: 'she', phonetic: '/ʃiː/', pos: 'pronoun', meanings: ['O (kadın)'], example: ['She is a doctor.', 'O bir doktor.'] },
+  { word: 'get', phonetic: '/ɡet/', pos: 'verb', meanings: ['Almak, elde etmek', 'olmak (get tired)', 'varmak (get home)'], example: ['I got a message from her.', 'Ondan bir mesaj aldım.'], note: 'get – got – got / gotten' },
+  { word: 'make', phonetic: '/meɪk/', pos: 'verb', meanings: ['Yapmak, üretmek', 'hazırlamak'], example: ["I'll make some tea.", 'Biraz çay yapacağım.'], note: 'make – made – made' },
+  { word: 'go', phonetic: '/ɡəʊ/', pos: 'verb', meanings: ['Gitmek'], example: ["Let's go home.", 'Hadi eve gidelim.'], note: 'go – went – gone' },
+  { word: 'know', phonetic: '/nəʊ/', pos: 'verb', meanings: ['Bilmek', 'tanımak'], example: ['Do you know her?', 'Onu tanıyor musun?'], note: 'know – knew – known' },
+  { word: 'take', phonetic: '/teɪk/', pos: 'verb', meanings: ['Almak, götürmek', '(zaman) sürmek'], example: ['It takes ten minutes.', 'On dakika sürüyor.'], note: 'take – took – taken' },
+  { word: 'see', phonetic: '/siː/', pos: 'verb', meanings: ['Görmek', 'anlamak (I see)'], example: ['I can see the sea from here.', 'Buradan denizi görebiliyorum.'], note: 'see – saw – seen' },
+  { word: 'come', phonetic: '/kʌm/', pos: 'verb', meanings: ['Gelmek'], example: ['Come here, please.', 'Buraya gel lütfen.'], note: 'come – came – come' },
+  { word: 'think', phonetic: '/θɪŋk/', pos: 'verb', meanings: ['Düşünmek', 'sanmak'], example: ["I think you're right.", 'Bence haklısın.'], note: 'think – thought – thought' },
+  { word: 'want', phonetic: '/wɒnt/', pos: 'verb', meanings: ['İstemek'], example: ['I want a cup of coffee.', 'Bir fincan kahve istiyorum.'] },
+  { word: 'give', phonetic: '/ɡɪv/', pos: 'verb', meanings: ['Vermek'], example: ['Can you give me your number?', 'Bana numaranı verebilir misin?'], note: 'give – gave – given' },
+  { word: 'find', phonetic: '/faɪnd/', pos: 'verb', meanings: ['Bulmak'], example: ["I can't find my keys.", 'Anahtarlarımı bulamıyorum.'], note: 'find – found – found' },
+  // Adjectives
+  { word: 'good', phonetic: '/ɡʊd/', pos: 'adjective', meanings: ['İyi, güzel'], example: ['This is a good idea.', 'Bu iyi bir fikir.'], note: 'good – better – best' },
+  { word: 'new', phonetic: '/njuː/', pos: 'adjective', meanings: ['Yeni'], example: ['I bought a new phone.', 'Yeni bir telefon aldım.'] },
+  { word: 'old', phonetic: '/əʊld/', pos: 'adjective', meanings: ['Eski', 'yaşlı'], example: ['How old are you?', 'Kaç yaşındasın?'] },
+  { word: 'big', phonetic: '/bɪɡ/', pos: 'adjective', meanings: ['Büyük'], example: ['They live in a big city.', 'Büyük bir şehirde yaşıyorlar.'] },
+  { word: 'small', phonetic: '/smɔːl/', pos: 'adjective', meanings: ['Küçük'], example: ['We have a small flat.', 'Küçük bir dairemiz var.'] },
+  { word: 'long', phonetic: '/lɒŋ/', pos: 'adjective', meanings: ['Uzun'], example: ['It was a long day.', 'Uzun bir gündü.'] },
+  { word: 'great', phonetic: '/ɡreɪt/', pos: 'adjective', meanings: ['Harika, muhteşem', 'büyük'], example: ['We had a great time.', 'Çok güzel vakit geçirdik.'] },
+  { word: 'important', phonetic: '/ɪmˈpɔːtnt/', pos: 'adjective', meanings: ['Önemli'], example: ['This is very important.', 'Bu çok önemli.'] },
 ];
 
 const DE: SampleEntry[] = [
-  { word: 'der, die, das', phonetic: '/deːɐ̯, diː, das/', pos: 'article', meanings: ['Belirli tanımlık (eril, dişil, nötr)'], example: ['Der Mann, die Frau und das Kind.', 'Adam, kadın ve çocuk.'], note: 'Her ismi tanımlığıyla birlikte öğren.' },
-  { word: 'und', phonetic: '/ʊnt/', pos: 'conjunction', meanings: ['Ve'], example: ['Ich trinke Kaffee und lese die Zeitung.', 'Kahve içiyorum ve gazete okuyorum.'] },
-  { word: 'sein', phonetic: '/zaɪ̯n/', pos: 'verb', meanings: ['Olmak', '-dir, -dır'], example: ['Ich bin müde.', 'Yorgunum.'], note: 'bin, bist, ist, sind, seid, sind' },
-  { word: 'in', phonetic: '/ɪn/', pos: 'preposition', meanings: ['İçinde, -de', 'içine, -e'], example: ['Ich wohne in Berlin.', "Berlin'de yaşıyorum."], note: 'Yer: Dativ, yön: Akkusativ.' },
-  { word: 'ein, eine', phonetic: '/aɪ̯n, ˈaɪ̯nə/', pos: 'article', meanings: ['Bir (belirsiz tanımlık)'], example: ['Ich habe eine Frage.', 'Bir sorum var.'] },
-  { word: 'zu', phonetic: '/t͡suː/', pos: 'preposition', meanings: ['-e, -a, -in yanına', '(sıfattan önce) fazla, çok'], example: ['Ich gehe zu meiner Mutter.', 'Annemin yanına gidiyorum.'], note: 'zu + Dativ' },
-  { word: 'haben', phonetic: '/ˈhaːbn̩/', pos: 'verb', meanings: ['Sahip olmak', 'yardımcı fiil (Perfekt)'], example: ['Wir haben keine Zeit.', 'Vaktimiz yok.'], note: 'habe, hast, hat, haben, habt, haben' },
-  { word: 'ich', phonetic: '/ɪç/', pos: 'pronoun', meanings: ['Ben'], example: ['Ich heiße Anna.', 'Benim adım Anna.'] },
-  { word: 'werden', phonetic: '/ˈveːɐ̯dn̩/', pos: 'verb', meanings: ['Olmak (dönüşmek)', 'gelecek zaman yardımcı fiili'], example: ['Es wird kalt.', 'Hava soğuyor.'], note: 'werde, wirst, wird, werden, werdet, werden' },
-  { word: 'sie / Sie', phonetic: '/ziː/', pos: 'pronoun', meanings: ['O (dişil)', 'onlar', 'Sie: siz (resmî)'], example: ['Sie kommt aus Wien.', "O Viyanalı."] },
-  { word: 'von', phonetic: '/fɔn/', pos: 'preposition', meanings: ['-den, -dan', '-in (ait olma)'], example: ['Das ist ein Geschenk von meinem Vater.', 'Bu babamdan bir hediye.'], note: 'von + Dativ' },
-  { word: 'nicht', phonetic: '/nɪçt/', pos: 'particle', meanings: ['Değil', 'olumsuzluk (-me, -ma)'], example: ['Ich verstehe das nicht.', 'Bunu anlamıyorum.'], note: 'İsim olumsuzlamada "kein" kullanılır.' },
-  { word: 'mit', phonetic: '/mɪt/', pos: 'preposition', meanings: ['İle, birlikte'], example: ['Ich fahre mit dem Zug.', 'Trenle gidiyorum.'], note: 'mit + Dativ' },
-  { word: 'es', phonetic: '/ɛs/', pos: 'pronoun', meanings: ['O (nötr)', 'hava/olay cümlelerinde özne'], example: ['Es regnet.', 'Yağmur yağıyor.'] },
-  { word: 'sich', phonetic: '/zɪç/', pos: 'pronoun', meanings: ['Kendini, kendine (dönüşlü zamir)'], example: ['Er wäscht sich.', 'O yıkanıyor.'] },
-  { word: 'auch', phonetic: '/aʊ̯x/', pos: 'adverb', meanings: ['De, da', 'dahi'], example: ['Ich komme auch mit.', 'Ben de geliyorum.'] },
-  { word: 'auf', phonetic: '/aʊ̯f/', pos: 'preposition', meanings: ['Üzerinde, üstüne'], example: ['Das Buch liegt auf dem Tisch.', 'Kitap masanın üstünde.'] },
-  { word: 'für', phonetic: '/fyːɐ̯/', pos: 'preposition', meanings: ['İçin'], example: ['Das ist für dich.', 'Bu senin için.'], note: 'für + Akkusativ' },
-  { word: 'an', phonetic: '/an/', pos: 'preposition', meanings: ['-de, yanında (dikey yüzey)', '(gün) -de'], example: ['Das Bild hängt an der Wand.', 'Resim duvarda asılı.'] },
-  { word: 'er', phonetic: '/eːɐ̯/', pos: 'pronoun', meanings: ['O (eril)'], example: ['Er ist mein Bruder.', 'O benim erkek kardeşim.'] },
-  { word: 'so', phonetic: '/zoː/', pos: 'adverb', meanings: ['Böyle, öyle', 'çok, o kadar'], example: ['Das ist so schön!', 'Bu çok güzel!'] },
-  { word: 'dass', phonetic: '/das/', pos: 'conjunction', meanings: ['Ki, -dığı'], example: ['Ich glaube, dass er recht hat.', 'Bence o haklı.'], note: 'Yan cümlede çekimli fiil sona gider.' },
-  { word: 'können', phonetic: '/ˈkœnən/', pos: 'verb', meanings: ['-ebilmek, -abilmek'], example: ['Kannst du mir helfen?', 'Bana yardım edebilir misin?'], note: 'kann, kannst, kann, können, könnt, können' },
-  { word: 'dieser', phonetic: '/ˈdiːzɐ/', pos: 'pronoun', meanings: ['Bu'], example: ['Dieser Film ist langweilig.', 'Bu film sıkıcı.'], note: 'dieser / diese / dieses' },
-  { word: 'als', phonetic: '/als/', pos: 'conjunction', meanings: ['Olarak', '-den (karşılaştırma)', '-dığında (geçmiş)'], example: ['Er ist größer als ich.', 'O benden uzun.'] },
-  { word: 'ihr', phonetic: '/iːɐ̯/', pos: 'pronoun', meanings: ['Siz (samimi, çoğul)', 'onun (dişil)'], example: ['Habt ihr Hunger?', 'Acıktınız mı?'] },
-  { word: 'ja', phonetic: '/jaː/', pos: 'particle', meanings: ['Evet', '(vurgu) ya, işte'], example: ['Ja, gerne!', 'Evet, memnuniyetle!'] },
-  { word: 'wie', phonetic: '/viː/', pos: 'adverb', meanings: ['Nasıl', 'gibi'], example: ['Wie heißt du?', 'Adın ne?'] },
-  { word: 'bei', phonetic: '/baɪ̯/', pos: 'preposition', meanings: ['Yanında, -de', 'sırasında'], example: ['Ich wohne bei meinen Eltern.', 'Ailemin yanında oturuyorum.'], note: 'bei + Dativ' },
-  { word: 'oder', phonetic: '/ˈoːdɐ/', pos: 'conjunction', meanings: ['Veya, ya da'], example: ['Tee oder Kaffee?', 'Çay mı kahve mi?'] },
+  // Nouns
+  { word: 'die Zeit', phonetic: '/t͡saɪ̯t/', pos: 'noun', meanings: ['Zaman, vakit'], example: ['Ich habe keine Zeit.', 'Vaktim yok.'], note: 'Çoğulu: die Zeiten' },
+  { word: 'das Jahr', phonetic: '/jaːɐ̯/', pos: 'noun', meanings: ['Yıl'], example: ['Ich lerne seit einem Jahr Deutsch.', 'Bir yıldır Almanca öğreniyorum.'], note: 'Çoğulu: die Jahre' },
+  { word: 'der Mensch', phonetic: '/mɛnʃ/', pos: 'noun', meanings: ['İnsan'], example: ['Er ist ein guter Mensch.', 'O iyi bir insan.'], note: 'Çoğulu: die Menschen' },
+  { word: 'der Tag', phonetic: '/taːk/', pos: 'noun', meanings: ['Gün'], example: ['Guten Tag!', 'İyi günler!'], note: 'Çoğulu: die Tage' },
+  { word: 'das Leben', phonetic: '/ˈleːbn̩/', pos: 'noun', meanings: ['Hayat, yaşam'], example: ['Das Leben ist schön.', 'Hayat güzel.'] },
+  { word: 'der Mann', phonetic: '/man/', pos: 'noun', meanings: ['Adam, erkek', 'koca'], example: ['Der Mann liest eine Zeitung.', 'Adam gazete okuyor.'], note: 'Çoğulu: die Männer' },
+  { word: 'die Frau', phonetic: '/fʁaʊ̯/', pos: 'noun', meanings: ['Kadın', 'eş, karı', 'Bayan (hitap)'], example: ['Meine Frau ist Ärztin.', 'Eşim doktor.'], note: 'Çoğulu: die Frauen' },
+  { word: 'das Kind', phonetic: '/kɪnt/', pos: 'noun', meanings: ['Çocuk'], example: ['Die Kinder spielen im Garten.', 'Çocuklar bahçede oynuyor.'], note: 'Çoğulu: die Kinder' },
+  { word: 'die Welt', phonetic: '/vɛlt/', pos: 'noun', meanings: ['Dünya'], example: ['Er reist um die ganze Welt.', 'Bütün dünyayı geziyor.'] },
+  { word: 'das Haus', phonetic: '/haʊ̯s/', pos: 'noun', meanings: ['Ev'], example: ['Ich bin zu Hause.', 'Evdeyim.'], note: 'Çoğulu: die Häuser · zu Hause = evde, nach Hause = eve' },
+  // Verbs
+  { word: 'sagen', phonetic: '/ˈzaːɡn̩/', pos: 'verb', meanings: ['Söylemek, demek'], example: ['Was hast du gesagt?', 'Ne dedin?'], note: 'sagte – hat gesagt' },
+  { word: 'machen', phonetic: '/ˈmaxn̩/', pos: 'verb', meanings: ['Yapmak'], example: ['Was machst du heute?', 'Bugün ne yapıyorsun?'], note: 'machte – hat gemacht' },
+  { word: 'gehen', phonetic: '/ˈɡeːən/', pos: 'verb', meanings: ['Gitmek (yürüyerek)'], example: ['Wir gehen ins Kino.', 'Sinemaya gidiyoruz.'], note: 'ging – ist gegangen · Wie geht es dir? = Nasılsın?' },
+  { word: 'wissen', phonetic: '/ˈvɪsn̩/', pos: 'verb', meanings: ['Bilmek'], example: ['Ich weiß es nicht.', 'Bilmiyorum.'], note: 'weiß, weißt, weiß – wusste – hat gewusst' },
+  { word: 'kommen', phonetic: '/ˈkɔmən/', pos: 'verb', meanings: ['Gelmek'], example: ['Woher kommst du?', 'Nerelisin?'], note: 'kam – ist gekommen' },
+  { word: 'sehen', phonetic: '/ˈzeːən/', pos: 'verb', meanings: ['Görmek'], example: ['Siehst du das Auto?', 'Arabayı görüyor musun?'], note: 'sieht – sah – hat gesehen' },
+  { word: 'geben', phonetic: '/ˈɡeːbn̩/', pos: 'verb', meanings: ['Vermek'], example: ['Kannst du mir das Salz geben?', 'Bana tuzu verebilir misin?'], note: 'gibt – gab – hat gegeben · es gibt = var' },
+  { word: 'nehmen', phonetic: '/ˈneːmən/', pos: 'verb', meanings: ['Almak', '(ulaşım aracına) binmek'], example: ['Ich nehme den Bus.', 'Otobüse biniyorum.'], note: 'nimmt – nahm – hat genommen' },
+  { word: 'finden', phonetic: '/ˈfɪndn̩/', pos: 'verb', meanings: ['Bulmak', '(fikir) bulmak, düşünmek'], example: ['Ich finde meinen Schlüssel nicht.', 'Anahtarımı bulamıyorum.'], note: 'fand – hat gefunden · Wie findest du das? = Bunu nasıl buluyorsun?' },
+  { word: 'denken', phonetic: '/ˈdɛŋkn̩/', pos: 'verb', meanings: ['Düşünmek'], example: ['Ich denke oft an dich.', 'Seni sık sık düşünüyorum.'], note: 'dachte – hat gedacht · denken an + Akkusativ' },
+  { word: 'sprechen', phonetic: '/ˈʃpʁɛçn̩/', pos: 'verb', meanings: ['Konuşmak'], example: ['Sprechen Sie Türkisch?', 'Türkçe konuşuyor musunuz?'], note: 'spricht – sprach – hat gesprochen' },
+  { word: 'arbeiten', phonetic: '/ˈaʁbaɪ̯tn̩/', pos: 'verb', meanings: ['Çalışmak'], example: ['Sie arbeitet in einer Bank.', 'Bir bankada çalışıyor.'], note: 'arbeitete – hat gearbeitet' },
+  // Adjectives
+  { word: 'gut', phonetic: '/ɡuːt/', pos: 'adjective', meanings: ['İyi'], example: ['Das Essen ist sehr gut.', 'Yemek çok iyi.'], note: 'gut – besser – am besten' },
+  { word: 'neu', phonetic: '/nɔɪ̯/', pos: 'adjective', meanings: ['Yeni'], example: ['Ich habe ein neues Handy.', 'Yeni bir telefonum var.'] },
+  { word: 'alt', phonetic: '/alt/', pos: 'adjective', meanings: ['Eski', 'yaşlı'], example: ['Wie alt bist du?', 'Kaç yaşındasın?'], note: 'alt – älter – am ältesten' },
+  { word: 'groß', phonetic: '/ɡʁoːs/', pos: 'adjective', meanings: ['Büyük', 'uzun boylu'], example: ['Berlin ist eine große Stadt.', 'Berlin büyük bir şehir.'], note: 'groß – größer – am größten' },
+  { word: 'klein', phonetic: '/klaɪ̯n/', pos: 'adjective', meanings: ['Küçük', 'kısa boylu'], example: ['Wir haben eine kleine Wohnung.', 'Küçük bir dairemiz var.'] },
+  { word: 'lang', phonetic: '/laŋ/', pos: 'adjective', meanings: ['Uzun'], example: ['Der Film war zu lang.', 'Film çok uzundu.'], note: 'lang – länger – am längsten' },
+  { word: 'wichtig', phonetic: '/ˈvɪçtɪç/', pos: 'adjective', meanings: ['Önemli'], example: ['Das ist sehr wichtig.', 'Bu çok önemli.'] },
+  { word: 'schön', phonetic: '/ʃøːn/', pos: 'adjective', meanings: ['Güzel'], example: ['Was für ein schöner Tag!', 'Ne güzel bir gün!'] },
 ];
 
 const RU: SampleEntry[] = [
-  { word: 'и', phonetic: '[i]', pos: 'conjunction', meanings: ['Ve', 'de, da'], example: ['Мама и папа дома.', 'Annem ve babam evde.'] },
-  { word: 'в', phonetic: '[v]', pos: 'preposition', meanings: ['-de, içinde', '-e, içine'], example: ['Я живу в Москве.', "Moskova'da yaşıyorum."], note: 'Yer: bulunma hâli, yön: belirtme hâli.' },
-  { word: 'не', phonetic: '[nʲe]', pos: 'particle', meanings: ['Değil', 'olumsuzluk (-me, -ma)'], example: ['Я не знаю.', 'Bilmiyorum.'] },
-  { word: 'на', phonetic: '[na]', pos: 'preposition', meanings: ['Üzerinde, -de', 'üzerine, -e'], example: ['Книга на столе.', 'Kitap masanın üstünde.'] },
-  { word: 'я', phonetic: '[ja]', pos: 'pronoun', meanings: ['Ben'], example: ['Я студент.', 'Ben öğrenciyim.'] },
-  { word: 'быть', phonetic: '[bɨtʲ]', pos: 'verb', meanings: ['Olmak'], example: ['Завтра я буду дома.', 'Yarın evde olacağım.'], note: 'Şimdiki zamanda genelde düşer: Я студент.' },
-  { word: 'он', phonetic: '[on]', pos: 'pronoun', meanings: ['O (eril)'], example: ['Он мой брат.', 'O benim erkek kardeşim.'] },
-  { word: 'с', phonetic: '[s]', pos: 'preposition', meanings: ['İle, birlikte', '-den (yüzeyden)'], example: ['Я пью чай с молоком.', 'Sütlü çay içiyorum.'] },
-  { word: 'что', phonetic: '[ʂto]', pos: 'pronoun', meanings: ['Ne', 'ki (bağlaç olarak)'], example: ['Что это?', 'Bu ne?'], note: '"şto" diye okunur.' },
-  { word: 'а', phonetic: '[a]', pos: 'conjunction', meanings: ['İse, ama (karşıtlık)'], example: ['Я врач, а она учитель.', 'Ben doktorum, o ise öğretmen.'] },
-  { word: 'по', phonetic: '[po]', pos: 'preposition', meanings: ['Boyunca, üzerinde', 'ile (iletişim)', '-e göre'], example: ['Мы говорим по телефону.', 'Telefonla konuşuyoruz.'] },
-  { word: 'это', phonetic: '[ˈɛtə]', pos: 'pronoun', meanings: ['Bu (… dır)'], example: ['Это мой дом.', 'Bu benim evim.'] },
-  { word: 'она', phonetic: '[ɐˈna]', pos: 'pronoun', meanings: ['O (dişil)'], example: ['Она очень умная.', 'O çok zeki.'] },
-  { word: 'этот', phonetic: '[ˈɛtət]', pos: 'pronoun', meanings: ['Bu (isimden önce)'], example: ['Этот фильм интересный.', 'Bu film ilginç.'], note: 'этот / эта / это / эти' },
-  { word: 'к', phonetic: '[k]', pos: 'preposition', meanings: ['-e doğru', '-in yanına'], example: ['Я иду к врачу.', 'Doktora gidiyorum.'], note: 'к + yönelme hâli (dative)' },
-  { word: 'но', phonetic: '[no]', pos: 'conjunction', meanings: ['Ama, fakat'], example: ['Я устал, но счастлив.', 'Yorgunum ama mutluyum.'] },
-  { word: 'они', phonetic: '[ɐˈnʲi]', pos: 'pronoun', meanings: ['Onlar'], example: ['Они живут в Казани.', "Onlar Kazan'da yaşıyor."] },
-  { word: 'мы', phonetic: '[mɨ]', pos: 'pronoun', meanings: ['Biz'], example: ['Мы идём в кино.', 'Sinemaya gidiyoruz.'] },
-  { word: 'как', phonetic: '[kak]', pos: 'adverb', meanings: ['Nasıl', 'gibi'], example: ['Как тебя зовут?', 'Adın ne?'] },
-  { word: 'из', phonetic: '[is]', pos: 'preposition', meanings: ['-den (içinden)'], example: ['Я из Турции.', "Türkiye'denim."], note: 'из + -in hâli (genitive)' },
-  { word: 'у', phonetic: '[u]', pos: 'preposition', meanings: ['Yanında', 'sahiplik: -in … var'], example: ['У меня есть машина.', 'Benim bir arabam var.'], note: 'у + -in hâli (genitive)' },
-  { word: 'который', phonetic: '[kɐˈtorɨj]', pos: 'pronoun', meanings: ['Ki o, -en/-an (ilgi zamiri)', 'hangi'], example: ['Это книга, которую я читаю.', 'Bu okuduğum kitap.'] },
-  { word: 'то', phonetic: '[to]', pos: 'pronoun', meanings: ['O, şu'], example: ['То, что ты сказал, правда.', 'Söylediğin şey doğru.'] },
-  { word: 'за', phonetic: '[za]', pos: 'preposition', meanings: ['Arkasında', 'için, karşılığında'], example: ['Спасибо за помощь!', 'Yardımın için teşekkürler!'] },
-  { word: 'свой', phonetic: '[svoj]', pos: 'pronoun', meanings: ['Kendi'], example: ['Он любит свою работу.', 'O kendi işini seviyor.'] },
-  { word: 'весь', phonetic: '[vʲesʲ]', pos: 'pronoun', meanings: ['Bütün, tüm'], example: ['Я работал весь день.', 'Bütün gün çalıştım.'], note: 'весь / вся / всё / все' },
-  { word: 'год', phonetic: '[ɡot]', pos: 'noun', meanings: ['Yıl'], example: ['С Новым годом!', 'Yeni yılın kutlu olsun!'] },
-  { word: 'от', phonetic: '[ot]', pos: 'preposition', meanings: ['-den (kişiden, kaynaktan)'], example: ['Это письмо от друга.', 'Bu bir arkadaştan gelen mektup.'] },
-  { word: 'так', phonetic: '[tak]', pos: 'adverb', meanings: ['Böyle, öyle', 'çok, o kadar'], example: ['Я так рада тебя видеть!', 'Seni gördüğüme çok sevindim!'] },
-  { word: 'о', phonetic: '[o]', pos: 'preposition', meanings: ['Hakkında'], example: ['Мы говорим о погоде.', 'Hava hakkında konuşuyoruz.'], note: 'о + bulunma hâli (prepositional)' },
+  // Nouns
+  { word: 'время', phonetic: '[ˈvrʲemʲə]', pos: 'noun', meanings: ['Zaman, vakit'], example: ['У меня нет времени.', 'Vaktim yok.'], note: 'Nötr isim · -in hâli: времени' },
+  { word: 'год', phonetic: '[ɡot]', pos: 'noun', meanings: ['Yıl'], example: ['Я живу здесь два года.', 'İki yıldır burada yaşıyorum.'], note: '5 ve üstü sayılarla: пять лет' },
+  { word: 'человек', phonetic: '[t͡ɕɪlɐˈvʲek]', pos: 'noun', meanings: ['İnsan, kişi'], example: ['Он хороший человек.', 'O iyi bir insan.'], note: 'Çoğulu: люди' },
+  { word: 'день', phonetic: '[dʲenʲ]', pos: 'noun', meanings: ['Gün'], example: ['Хорошего дня!', 'İyi günler!'], note: 'Eril · çoğulu: дни' },
+  { word: 'жизнь', phonetic: '[ʐɨzʲnʲ]', pos: 'noun', meanings: ['Hayat, yaşam'], example: ['Такова жизнь.', 'Hayat böyle.'], note: 'Dişil isim' },
+  { word: 'мужчина', phonetic: '[mʊˈɕːinə]', pos: 'noun', meanings: ['Adam, erkek'], example: ['Этот мужчина — мой отец.', 'Bu adam benim babam.'], note: '-а ile bitmesine rağmen eril' },
+  { word: 'женщина', phonetic: '[ˈʐɛnʲɕːɪnə]', pos: 'noun', meanings: ['Kadın'], example: ['Эта женщина — врач.', 'Bu kadın doktor.'] },
+  { word: 'ребёнок', phonetic: '[rʲɪˈbʲɵnək]', pos: 'noun', meanings: ['Çocuk'], example: ['Ребёнок спит.', 'Çocuk uyuyor.'], note: 'Çoğulu: дети' },
+  { word: 'мир', phonetic: '[mʲir]', pos: 'noun', meanings: ['Dünya', 'barış'], example: ['Он хочет увидеть весь мир.', 'Bütün dünyayı görmek istiyor.'] },
+  { word: 'дом', phonetic: '[dom]', pos: 'noun', meanings: ['Ev', 'bina'], example: ['Я дома.', 'Evdeyim.'], note: 'дома = evde, домой = eve' },
+  // Verbs
+  { word: 'говорить', phonetic: '[ɡəvɐˈrʲitʲ]', pos: 'verb', meanings: ['Konuşmak', 'söylemek'], example: ['Вы говорите по-турецки?', 'Türkçe konuşuyor musunuz?'], note: 'говорю, говоришь · tamamlanmış: сказать' },
+  { word: 'делать', phonetic: '[ˈdʲeɫətʲ]', pos: 'verb', meanings: ['Yapmak'], example: ['Что ты делаешь?', 'Ne yapıyorsun?'], note: 'делаю, делаешь · tamamlanmış: сделать' },
+  { word: 'идти', phonetic: '[ɪˈtʲtʲi]', pos: 'verb', meanings: ['Gitmek (yürüyerek)'], example: ['Я иду домой.', 'Eve gidiyorum.'], note: 'иду, идёшь · geçmiş: шёл, шла' },
+  { word: 'знать', phonetic: '[znatʲ]', pos: 'verb', meanings: ['Bilmek', 'tanımak'], example: ['Я не знаю, где он.', 'Onun nerede olduğunu bilmiyorum.'], note: 'знаю, знаешь' },
+  { word: 'видеть', phonetic: '[ˈvʲidʲɪtʲ]', pos: 'verb', meanings: ['Görmek'], example: ['Я тебя вижу.', 'Seni görüyorum.'], note: 'вижу, видишь · tamamlanmış: увидеть' },
+  { word: 'думать', phonetic: '[ˈdumətʲ]', pos: 'verb', meanings: ['Düşünmek'], example: ['Я думаю, это правда.', 'Bence bu doğru.'], note: 'думаю, думаешь · думать о + bulunma hâli' },
+  { word: 'хотеть', phonetic: '[xɐˈtʲetʲ]', pos: 'verb', meanings: ['İstemek'], example: ['Я хочу кофе.', 'Kahve istiyorum.'], note: 'Düzensiz: хочу, хочешь, хочет, хотим, хотите, хотят' },
+  { word: 'жить', phonetic: '[ʐɨtʲ]', pos: 'verb', meanings: ['Yaşamak', 'oturmak (ikamet)'], example: ['Где ты живёшь?', 'Nerede yaşıyorsun?'], note: 'живу, живёшь' },
+  { word: 'работать', phonetic: '[rɐˈbotətʲ]', pos: 'verb', meanings: ['Çalışmak'], example: ['Она работает в банке.', 'Bir bankada çalışıyor.'], note: 'работаю, работаешь' },
+  { word: 'давать', phonetic: '[dɐˈvatʲ]', pos: 'verb', meanings: ['Vermek'], example: ['Он даёт мне книгу.', 'Bana kitabı veriyor.'], note: 'даю, даёшь · tamamlanmış: дать' },
+  { word: 'брать', phonetic: '[bratʲ]', pos: 'verb', meanings: ['Almak', '(taksi) tutmak'], example: ['Я беру такси.', 'Taksiye biniyorum.'], note: 'беру, берёшь · tamamlanmış: взять' },
+  { word: 'понимать', phonetic: '[pənʲɪˈmatʲ]', pos: 'verb', meanings: ['Anlamak'], example: ['Я тебя не понимаю.', 'Seni anlamıyorum.'], note: 'понимаю, понимаешь · tamamlanmış: понять' },
+  // Adjectives
+  { word: 'хороший', phonetic: '[xɐˈroʂɨj]', pos: 'adjective', meanings: ['İyi, güzel'], example: ['Сегодня хорошая погода.', 'Bugün hava güzel.'], note: 'Zarfı: хорошо' },
+  { word: 'новый', phonetic: '[ˈnovɨj]', pos: 'adjective', meanings: ['Yeni'], example: ['У меня новая машина.', 'Yeni bir arabam var.'], note: 'новый / новая / новое / новые' },
+  { word: 'старый', phonetic: '[ˈstarɨj]', pos: 'adjective', meanings: ['Eski', 'yaşlı'], example: ['Это очень старый город.', 'Bu çok eski bir şehir.'] },
+  { word: 'большой', phonetic: '[bɐlʲˈʂoj]', pos: 'adjective', meanings: ['Büyük'], example: ['Москва — большой город.', 'Moskova büyük bir şehir.'] },
+  { word: 'маленький', phonetic: '[ˈmalʲɪnʲkʲɪj]', pos: 'adjective', meanings: ['Küçük'], example: ['У нас маленькая квартира.', 'Küçük bir dairemiz var.'] },
+  { word: 'длинный', phonetic: '[ˈdlʲinːɨj]', pos: 'adjective', meanings: ['Uzun'], example: ['Это был длинный день.', 'Uzun bir gündü.'] },
+  { word: 'важный', phonetic: '[ˈvaʐnɨj]', pos: 'adjective', meanings: ['Önemli'], example: ['Это очень важный вопрос.', 'Bu çok önemli bir soru.'] },
+  { word: 'красивый', phonetic: '[krɐˈsʲivɨj]', pos: 'adjective', meanings: ['Güzel, yakışıklı'], example: ['Какой красивый вид!', 'Ne güzel bir manzara!'] },
 ];
 
 const SAMPLE_WORDS: Record<DictionaryLanguage, WordItem[]> = {

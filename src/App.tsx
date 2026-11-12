@@ -413,7 +413,7 @@ export default function App() {
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 max-w-xs mx-auto">
                     {hasActiveFilters
                       ? 'Arama kriterlerinizi değiştirmeyi veya filtreleri temizlemeyi deneyebilirsiniz.'
-                      : `İlk kelimenizi ekleyin ya da ${lang.name.toLowerCase()} dilinin en sık kullanılan 30 kelimesiyle başlayın.`}
+                      : `İlk kelimenizi ekleyin ya da 30 temel kelimeyle (isim, fiil, sıfat) başlayın.`}
                   </p>
                 </div>
 

@@ -413,7 +413,7 @@ on:
                 Örnek Kelimeleri Sıfırla (Fabrika Ayarları)
               </div>
               <p className="text-amber-800 dark:text-amber-300 text-xs">
-                {lang.name} sözlüğünü dilin en sık kullanılan 30 kelimesinden oluşan başlangıç listesine döndürür. Bu sözlüğe eklediğiniz kelimeler silinir; diğer dillerdeki sözlükleriniz etkilenmez. Önce "Dışa Aktar" sekmesinden yedek almanızı öneririz.
+                {lang.name} sözlüğünü 30 temel kelimelik (isim, fiil, sıfat) başlangıç listesine döndürür. Bu sözlüğe eklediğiniz kelimeler silinir; diğer dillerdeki sözlükleriniz etkilenmez. Önce "Dışa Aktar" sekmesinden yedek almanızı öneririz.
               </p>
               <button
                 type="button"

@@ -32,7 +32,7 @@ Firebase ayarları repoda tutulmaz; workflow bunları **Settings → Secrets and
 
 - **Dile Göre Ayrı Sözlükler:** İngilizce, Almanca ve Rusça. Açılışta sözlük seçilir; eklenen her kelime seçili sözlüğe kaydedilir ve yalnızca o sözlüğün kayıtları görünür. Dil üst menüden değiştirilir.
 - **Kişisel Hesap:** Giriş yapan her kullanıcının sözlükleri kendi Firestore alanında (`users/{uid}/words`) tutulur, cihazlar arasında senkronize olur. Giriş yapmayan ziyaretçiler salt okunur modda; ekleyemez, düzenleyemez, hiçbir şey kaydedilmez. Başkalarının sözlükleri hiçbir şekilde görülemez (Firestore kuralları yalnızca sahibine izin verir).
-- **Başlangıç Listeleri:** Her dilin en sık kullanılan 30 kelimesi (anlam, sesletim, örnek cümle ve çevirisiyle) hazır gelir.
+- **Başlangıç Listeleri:** Her dil için sık kullanılan 30 temel kelime (10 isim, 12 fiil, 8 sıfat); anlam, sesletim, örnek cümle, çeviri ve dile özgü notlarla (Almanca artikel/çoğul, Rusça fiil eşleri, İngilizce düzensiz fiiller).
 - **Kelime & Anlam Kaydı:** Kelime, fonetik telaffuz, kelime türü (isim, fiil, sıfat, deyim vb.), CEFR seviyesi (A1-C2).
 - **Zengin Örnek Cümleler:** Her kelime için birden fazla örnek cümle ve Türkçe çeviri.
 - **Sesli Telaffuz (TTS):** Web Speech API ile sözlüğün dilinde (en-US, de-DE, ru-RU) telaffuz.
