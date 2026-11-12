@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DictionaryLanguage, WordFilter, WordItem, WordStatus } from './types/dictionary.ts';
 import { ALL_SAMPLE_WORDS, getSampleWords } from './data/initialWords.ts';
-import { LANGUAGES, isDictionaryLanguage, normalizeLanguage } from './data/languages.ts';
+import { LANGUAGES, isDictionaryLanguage } from './data/languages.ts';
 import { calculateStats, filterAndSearchWords } from './utils/dictionary.ts';
 import { Header } from './components/Header.tsx';
 import { StatsBanner } from './components/StatsBanner.tsx';
@@ -24,8 +24,8 @@ import {
 } from './services/firebase.ts';
 import { User } from 'firebase/auth';
 
-/** Words of the signed-out (guest) user, all languages. Signed-in users' words live only in Firestore. */
-const GUEST_STORAGE_KEY = 'lexinote_words_v1';
+/** Guest words used to be stored here; guests are read-only now, so the key is only cleaned up. */
+const LEGACY_GUEST_STORAGE_KEY = 'lexinote_words_v1';
 const LANGUAGE_KEY = 'lexinote_language';
 const THEME_KEY = 'lexinote_theme_dark';
 
@@ -38,21 +38,6 @@ const DEFAULT_FILTERS: WordFilter = {
   favoritesOnly: false,
   sortBy: 'date_desc',
 };
-
-function loadGuestWords(): WordItem[] {
-  try {
-    const saved = localStorage.getItem(GUEST_STORAGE_KEY);
-    if (saved) {
-      const parsed: unknown = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return (parsed as WordItem[]).map((w) => ({ ...w, language: normalizeLanguage(w.language) }));
-      }
-    }
-  } catch {
-    // Corrupt or unavailable storage: fall back to the starter words
-  }
-  return ALL_SAMPLE_WORDS;
-}
 
 function loadLanguage(): DictionaryLanguage | null {
   try {
@@ -74,15 +59,10 @@ export default function App() {
   // 2. Selected dictionary
   const [language, setLanguage] = useState<DictionaryLanguage | null>(loadLanguage);
 
-  // 3. Words: guest words (localStorage) and the signed-in user's words (Firestore) are kept apart,
-  //    so one account's words never leak into guest mode or into another account.
-  const [guestWords, setGuestWords] = useState<WordItem[]>(loadGuestWords);
+  // 3. Words: guests see the fixed starter words (read-only); each signed-in user has their own words
+  //    in Firestore. Nothing a guest does is stored, so it can never reach anyone else.
   const [cloudWords, setCloudWords] = useState<WordItem[]>([]);
-  const allWords = currentUser ? cloudWords : guestWords;
-  const setAllWords = currentUser ? setCloudWords : setGuestWords;
-
-  const guestWordsRef = useRef(guestWords);
-  guestWordsRef.current = guestWords;
+  const allWords = currentUser ? cloudWords : ALL_SAMPLE_WORDS;
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncToast, setSyncToast] = useState<string | null>(null);
@@ -133,11 +113,11 @@ export default function App() {
         if (isFirstLoad) {
           isFirstLoad = false;
           if (words.length === 0) {
-            // First sign-in of this account: start it with the guest's words (all dictionaries)
-            const wordsToMigrate = guestWordsRef.current.map((w) => ({ ...w, userId }));
-            setCloudWords(wordsToMigrate);
-            batchSyncWordsToFirestore(userId, wordsToMigrate)
-              .then(() => showToast('Sözlükleriniz hesabınıza aktarıldı.'))
+            // First sign-in of this account: create its dictionaries from the starter words
+            const starterWords = ALL_SAMPLE_WORDS.map((w) => ({ ...w, userId }));
+            setCloudWords(starterWords);
+            batchSyncWordsToFirestore(userId, starterWords)
+              .then(() => showToast("Sözlüklerin 30'ar temel kelimeyle oluşturuldu."))
               .catch((err) => console.error('Cloud sync error:', err));
             return;
           }
@@ -153,14 +133,14 @@ export default function App() {
     return () => unsubscribeFirestore();
   }, [currentUser]);
 
-  // Persist guest words
+  // Remove words stored by older guest-mode versions
   useEffect(() => {
     try {
-      localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(guestWords));
-    } catch (err) {
-      console.error('LocalStorage write error:', err);
+      localStorage.removeItem(LEGACY_GUEST_STORAGE_KEY);
+    } catch {
+      // Storage unavailable: nothing to clean up
     }
-  }, [guestWords]);
+  }, []);
 
   const showToast = (msg: string) => {
     setSyncToast(msg);
@@ -209,60 +189,68 @@ export default function App() {
 
   const filteredWords = useMemo(() => filterAndSearchWords(words, filters), [words, filters]);
 
-  // CRUD handlers
-  const persistWord = async (word: WordItem, errorLabel: string) => {
-    if (!currentUser) return;
+  /** Returns the signed-in user, or asks the guest to sign in and returns null. */
+  const requireAccount = (): User | null => {
+    if (currentUser) return currentUser;
+    showToast('Kendi sözlüğünü oluşturmak ve düzenlemek için giriş yap.');
+    setIsAuthModalOpen(true);
+    return null;
+  };
+
+  // CRUD handlers: signed-in users only
+  const updateWord = async (id: string, changes: (word: WordItem) => Partial<WordItem>, errorLabel: string) => {
+    const user = requireAccount();
+    if (!user) return;
+    const target = cloudWords.find((w) => w.id === id);
+    if (!target) return;
+    const updated: WordItem = { ...target, ...changes(target), updatedAt: new Date().toISOString() };
+    setCloudWords((prev) => prev.map((w) => (w.id === id ? updated : w)));
     try {
-      await saveUserWord(currentUser.uid, word);
+      await saveUserWord(user.uid, updated);
     } catch (err) {
       console.error(`Failed to ${errorLabel} in Firestore:`, err);
     }
   };
 
-  const updateWord = (id: string, changes: (word: WordItem) => Partial<WordItem>): WordItem | null => {
-    const target = allWords.find((w) => w.id === id);
-    if (!target) return null;
-    const updated: WordItem = { ...target, ...changes(target), updatedAt: new Date().toISOString() };
-    setAllWords((prev) => prev.map((w) => (w.id === id ? updated : w)));
-    return updated;
-  };
+  const handleToggleFavorite = (id: string) =>
+    updateWord(id, (w) => ({ favorite: !w.favorite }), 'update favorite');
 
-  const handleToggleFavorite = async (id: string) => {
-    const updated = updateWord(id, (w) => ({ favorite: !w.favorite }));
-    if (updated) await persistWord(updated, 'update favorite');
-  };
-
-  const handleChangeStatus = async (id: string, newStatus: WordStatus) => {
-    const updated = updateWord(id, () => ({ status: newStatus }));
-    if (updated) await persistWord(updated, 'update status');
-  };
+  const handleChangeStatus = (id: string, newStatus: WordStatus) =>
+    updateWord(id, () => ({ status: newStatus }), 'update status');
 
   const handleUpdateWordReview = async (id: string, newStatus: WordStatus) => {
-    const updated = updateWord(id, (w) => ({
-      status: newStatus,
-      reviewCount: (w.reviewCount || 0) + 1,
-      lastReviewedAt: new Date().toISOString(),
-    }));
-    if (updated) await persistWord(updated, 'update review');
+    // Guests can practise, but their progress is not saved
+    if (!currentUser) return;
+    await updateWord(
+      id,
+      (w) => ({
+        status: newStatus,
+        reviewCount: (w.reviewCount || 0) + 1,
+        lastReviewedAt: new Date().toISOString(),
+      }),
+      'update review'
+    );
   };
 
   const handleDeleteWord = async (id: string) => {
-    setAllWords((prev) => prev.filter((w) => w.id !== id));
-    if (currentUser) {
-      try {
-        await deleteUserWord(currentUser.uid, id);
-        showToast('Kelime silindi.');
-      } catch (err) {
-        console.error('Failed to delete word in Firestore:', err);
-      }
+    const user = requireAccount();
+    if (!user) return;
+    setCloudWords((prev) => prev.filter((w) => w.id !== id));
+    try {
+      await deleteUserWord(user.uid, id);
+      showToast('Kelime silindi.');
+    } catch (err) {
+      console.error('Failed to delete word in Firestore:', err);
     }
   };
 
   const handleSaveWord = async (
     wordData: Omit<WordItem, 'id' | 'createdAt' | 'updatedAt' | 'reviewCount'> & { id?: string }
   ) => {
+    const user = requireAccount();
+    if (!user) return;
     const now = new Date().toISOString();
-    const existing = wordData.id ? allWords.find((w) => w.id === wordData.id) : undefined;
+    const existing = wordData.id ? cloudWords.find((w) => w.id === wordData.id) : undefined;
 
     const wordToSave: WordItem = {
       ...existing,
@@ -271,77 +259,74 @@ export default function App() {
       reviewCount: existing?.reviewCount ?? 0,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
-      userId: currentUser?.uid,
+      userId: user.uid,
     };
 
-    setAllWords((prev) =>
+    setCloudWords((prev) =>
       existing ? prev.map((w) => (w.id === wordToSave.id ? wordToSave : w)) : [wordToSave, ...prev]
     );
 
-    if (currentUser) {
-      try {
-        await saveUserWord(currentUser.uid, wordToSave);
-        showToast(`"${wordToSave.word}" kaydedildi.`);
-      } catch (err) {
-        console.error('Failed to save word to Firestore:', err);
-      }
+    try {
+      await saveUserWord(user.uid, wordToSave);
+      showToast(`"${wordToSave.word}" kaydedildi.`);
+    } catch (err) {
+      console.error('Failed to save word to Firestore:', err);
     }
   };
 
   /** Replaces the selected dictionary with the starter words. Other dictionaries are untouched. */
   const handleResetToDefaults = async () => {
-    if (!language) return;
-    const samples = getSampleWords(language).map((w) => ({ ...w, userId: currentUser?.uid }));
+    const user = requireAccount();
+    if (!user || !language) return;
+    const samples = getSampleWords(language).map((w) => ({ ...w, userId: user.uid }));
     const sampleIds = new Set(samples.map((w) => w.id));
     const removedIds = words.filter((w) => !sampleIds.has(w.id)).map((w) => w.id);
 
-    setAllWords((prev) => [...samples, ...prev.filter((w) => w.language !== language)]);
+    setCloudWords((prev) => [...samples, ...prev.filter((w) => w.language !== language)]);
 
-    if (currentUser) {
-      try {
-        await batchDeleteWordsFromFirestore(currentUser.uid, removedIds);
-        await batchSyncWordsToFirestore(currentUser.uid, samples);
-        showToast(`${LANGUAGES[language].name} başlangıç kelimeleri yüklendi.`);
-      } catch (err) {
-        console.error('Reset cloud error:', err);
-      }
+    try {
+      await batchDeleteWordsFromFirestore(user.uid, removedIds);
+      await batchSyncWordsToFirestore(user.uid, samples);
+      showToast(`${LANGUAGES[language].name} başlangıç kelimeleri yüklendi.`);
+    } catch (err) {
+      console.error('Reset cloud error:', err);
     }
   };
 
   /** Merges imported words (already assigned to the selected language) into the selected dictionary. */
   const handleImportWords = async (importedWords: WordItem[]) => {
-    if (!language) return;
+    const user = requireAccount();
+    if (!user || !language) return;
     // An id that belongs to another dictionary must not move that word here
-    const otherDictionaryIds = new Set(allWords.filter((w) => w.language !== language).map((w) => w.id));
+    const otherDictionaryIds = new Set(cloudWords.filter((w) => w.language !== language).map((w) => w.id));
     const prepared = importedWords.map((w) => ({
       ...w,
       id: otherDictionaryIds.has(w.id) ? createWordId() : w.id,
-      userId: currentUser?.uid,
+      userId: user.uid,
     }));
     const importedIds = new Set(prepared.map((w) => w.id));
 
-    setAllWords((prev) => [...prepared, ...prev.filter((w) => !importedIds.has(w.id))]);
+    setCloudWords((prev) => [...prepared, ...prev.filter((w) => !importedIds.has(w.id))]);
 
-    if (currentUser) {
-      try {
-        await batchSyncWordsToFirestore(currentUser.uid, prepared);
-        showToast(`${prepared.length} kelime hesabınıza aktarıldı.`);
-      } catch (err) {
-        console.error('Import cloud error:', err);
-      }
+    try {
+      await batchSyncWordsToFirestore(user.uid, prepared);
+      showToast(`${prepared.length} kelime hesabınıza aktarıldı.`);
+    } catch (err) {
+      console.error('Import cloud error:', err);
     }
   };
 
   const handleLogout = async () => {
     try {
       await logoutUser();
-      showToast('Çıkış yapıldı. Misafir moduna geçildi.');
+      showToast('Çıkış yapıldı.');
     } catch (err) {
       console.error('Logout error:', err);
     }
   };
 
   const openAddModal = () => {
+    if (!requireAccount()) return;
     setEditingWord(null);
     setIsWordModalOpen(true);
   };
@@ -401,6 +386,7 @@ export default function App() {
                     key={word.id}
                     word={word}
                     onEdit={(w) => {
+                      if (!requireAccount()) return;
                       setEditingWord(w);
                       setIsWordModalOpen(true);
                     }}
@@ -553,6 +539,7 @@ export default function App() {
             onImportWords={handleImportWords}
             onResetToDefaults={handleResetToDefaults}
             language={language}
+            readOnly={!currentUser}
           />
         </>
       )}

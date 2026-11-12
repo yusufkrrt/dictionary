@@ -4,7 +4,7 @@
 
 **Canlı:** https://yusufkrrt.github.io/dictionary/
 
-Tamamen istemci tarafında çalışır. Giriş yapmadan veriler tarayıcıda (`localStorage`) tutulur; giriş yapıldığında Firebase (Firestore) ile cihazlar arasında senkronize edilir. **GitHub Pages** üzerinde yayınlanır.
+Tamamen istemci tarafında çalışır ve **GitHub Pages** üzerinde yayınlanır. Giriş yapmayan ziyaretçiler hazır başlangıç listelerini salt okunur olarak görür, dinler ve pratik yapar; hiçbir şey kaydedilmez. Kelime eklemek ve düzenlemek için giriş gerekir; her kullanıcının sözlükleri yalnızca kendi Firebase (Firestore) alanında tutulur.
 
 ---
 
@@ -31,7 +31,7 @@ Firebase ayarları repoda tutulmaz; workflow bunları **Settings → Secrets and
 ## ✨ Özellikler
 
 - **Dile Göre Ayrı Sözlükler:** İngilizce, Almanca ve Rusça. Açılışta sözlük seçilir; eklenen her kelime seçili sözlüğe kaydedilir ve yalnızca o sözlüğün kayıtları görünür. Dil üst menüden değiştirilir.
-- **Kişisel Hesap:** Giriş yapan her kullanıcının sözlükleri kendi Firestore alanında (`users/{uid}/words`) tutulur, cihazlar arasında senkronize olur. Giriş yapılmadan veriler tarayıcıda saklanır.
+- **Kişisel Hesap:** Giriş yapan her kullanıcının sözlükleri kendi Firestore alanında (`users/{uid}/words`) tutulur, cihazlar arasında senkronize olur. Giriş yapmayan ziyaretçiler salt okunur modda; ekleyemez, düzenleyemez, hiçbir şey kaydedilmez. Başkalarının sözlükleri hiçbir şekilde görülemez (Firestore kuralları yalnızca sahibine izin verir).
 - **Başlangıç Listeleri:** Her dilin en sık kullanılan 30 kelimesi (anlam, sesletim, örnek cümle ve çevirisiyle) hazır gelir.
 - **Kelime & Anlam Kaydı:** Kelime, fonetik telaffuz, kelime türü (isim, fiil, sıfat, deyim vb.), CEFR seviyesi (A1-C2).
 - **Zengin Örnek Cümleler:** Her kelime için birden fazla örnek cümle ve Türkçe çeviri.

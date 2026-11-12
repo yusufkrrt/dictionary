@@ -29,6 +29,8 @@ interface GitHubModalProps {
   onImportWords: (newWords: WordItem[]) => void;
   onResetToDefaults: () => void;
   language: DictionaryLanguage;
+  /** Guests can only export; importing and resetting need an account. */
+  readOnly: boolean;
 }
 
 export const GitHubModal: React.FC<GitHubModalProps> = ({
@@ -38,6 +40,7 @@ export const GitHubModal: React.FC<GitHubModalProps> = ({
   onImportWords,
   onResetToDefaults,
   language,
+  readOnly,
 }) => {
   const lang = LANGUAGES[language];
   const [activeTab, setActiveTab] = useState<'deploy' | 'export' | 'import' | 'reset'>('deploy');
@@ -172,28 +175,32 @@ on:
           >
             📥 Dışa Aktar (MD & JSON & CSV)
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('import')}
-            className={`pb-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'import'
-                ? 'border-amber-600 text-amber-600 dark:text-amber-400 font-semibold'
-                : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
-            }`}
-          >
-            📤 İçe Aktar / Geri Yükle
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('reset')}
-            className={`pb-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'reset'
-                ? 'border-amber-600 text-amber-600 dark:text-amber-400 font-semibold'
-                : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
-            }`}
-          >
-            🔄 Sıfırla
-          </button>
+          {!readOnly && (
+            <>
+            <button
+              type="button"
+              onClick={() => setActiveTab('import')}
+              className={`pb-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+                activeTab === 'import'
+                  ? 'border-amber-600 text-amber-600 dark:text-amber-400 font-semibold'
+                  : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+              }`}
+            >
+              📤 İçe Aktar / Geri Yükle
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('reset')}
+              className={`pb-2.5 font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+                activeTab === 'reset'
+                  ? 'border-amber-600 text-amber-600 dark:text-amber-400 font-semibold'
+                  : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+              }`}
+            >
+              🔄 Sıfırla
+            </button>
+            </>
+          )}
         </div>
 
         {/* Modal Body */}
@@ -343,7 +350,7 @@ on:
             </div>
           )}
 
-          {activeTab === 'import' && (
+          {activeTab === 'import' && !readOnly && (
             <div className="space-y-4">
               <p className="text-stone-600 dark:text-stone-400">
                 Daha önce yedeklediğiniz bir <code className="font-mono">.json</code> dosyasını yükleyin veya JSON metnini yapıştırın. Kelimeler <strong>{lang.name}</strong> sözlüğüne eklenir; aynı kimlikteki kayıtlar güncellenir, diğerleri silinmez.
@@ -399,7 +406,7 @@ on:
             </div>
           )}
 
-          {activeTab === 'reset' && (
+          {activeTab === 'reset' && !readOnly && (
             <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl space-y-3">
               <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-semibold text-sm">
                 <RotateCcw className="w-4 h-4 text-amber-700 dark:text-amber-400" />

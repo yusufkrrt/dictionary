@@ -61,13 +61,13 @@ export const StatsBanner: React.FC<StatsBannerProps> = ({ stats, currentUser, on
             {currentUser ? (
               <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Firebase Firestore bulut veritabanı aktif ({currentUser.email})</span>
+                <span>Kişisel sözlüğün senkronize ({currentUser.email})</span>
               </span>
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-stone-500 dark:text-stone-400 flex items-center gap-1">
                   <HardDrive className="w-3.5 h-3.5" />
-                  <span>Yerel hafıza modu</span>
+                  <span>Misafir modu · salt okunur</span>
                 </span>
                 <span>·</span>
                 <button
@@ -75,7 +75,7 @@ export const StatsBanner: React.FC<StatsBannerProps> = ({ stats, currentUser, on
                   onClick={onOpenAuthModal}
                   className="text-amber-800 dark:text-amber-300 hover:underline font-medium cursor-pointer"
                 >
-                  Buluta bağlamak için giriş yapın
+                  Kendi sözlüğünü oluşturmak için giriş yap
                 </button>
               </div>
             )}
